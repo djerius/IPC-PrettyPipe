@@ -151,7 +151,7 @@ sub valrep
   my $value = shift;
   my $lastvalue = shift;
 
-  my $match;
+  my $match = 0;
 
   $lastvalue ||= $value;
   my $curvalue = $lastvalue;
@@ -160,8 +160,11 @@ sub valrep
   {
     next unless ref( $_ );
 
-    $match += $_->[1] =~ s/$pattern/$curvalue/;
-    $curvalue = $value;
+    if ( $_->[1] =~ s/$pattern/$curvalue/ )
+    {
+      $match++;
+      $curvalue = $value;
+    }
   }
 
   $match;
