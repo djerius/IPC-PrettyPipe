@@ -7,7 +7,7 @@ use Carp;
 use vars qw( $VERSION );
 use Data::Dumper;
 
-$VERSION = '1.02';
+$VERSION = '1.03';
 
 sub new
 {
@@ -149,15 +149,24 @@ sub valrep
   my $pattern = shift;
   my $value = shift;
   my $lastvalue = shift;
+  my $firstvalue = shift;
+
+  $lastvalue  ||= $value;
+  $firstvalue ||= $value;
+
+  # first value may be special
+  my $curvalue = $firstvalue;
 
   my $match = 0;
+  my $nmatch = $self->_valmatch( $pattern );
 
-  $lastvalue ||= $value;
-  my $curvalue = $lastvalue;
-
-  foreach ( reverse @{$self->{args}} )
+  foreach ( @{$self->{args}} )
   {
     next unless ref( $_ );
+    
+    # last value may be special
+    $curvalue = $lastvalue 
+      if ($match + 1) == $nmatch;
 
     if ( $_->[1] =~ s/$pattern/$curvalue/ )
     {
@@ -169,15 +178,32 @@ sub valrep
   $match;
 }
 
+sub _valmatch
+{
+  my $self = shift;
+  my $pattern = shift;
+
+  my $match = 0;
+  foreach ( @{$self->{args}} )
+  {
+    next unless ref( $_ );
+    $match++ if $_->[1] =~ /$pattern/;
+  }
+  $match;
+}
+
+
+
 sub _shell_escape
 {
   my $str = shift;
 
-  my $magic_chars = q{\\\$"'!*{};};
+  my $magic_chars = q{\\\$"'!*{};}; #"
+
   # if there's white space, single quote the entire word.  however,
   # since single quotes can't be escaped inside single quotes,
   # isolate them from the single quoted part and escape them.
-  # i.e., the string a 'b turns into 'a '\''b'
+  # i.e., the string a 'b turns into 'a '\''b' 
   if ( $str =~ /\s/ )
   {
     # isolate the lone single quotes
@@ -215,7 +241,6 @@ sub _error
     carp @_;
   }
 }
-
 
 =head1 NAME
 
@@ -597,31 +622,35 @@ sub run
 
 }
 
-=item valrep( $pattern, $value, [$lastvalue] )
+=item valrep( $pattern, $value, [$lastvalue, [$firstvalue] )
 
 Replace arguments to options whose arguments match the Perl regular
 expression, I<$pattern> with I<$value>.  If I<$lastvalue> is
 specified, the last matched argument will be replaced with
-I<$lastvalue>.
+I<$lastvalue>.  If I<$firstvalue> is specified, the first matched
+argument will be replaced with I<$firstvalue>.
 
 For example,
 
 	my $pipe = new PipeC;
-        $pipe->add( 'cmd1', [ output => 'OUTPUT' ] );
-        $pipe->add( 'cmd2', [ output => 'OUTPUT' ] );
-        $pipe->add( 'cmd3', [ output => 'OUTPUT' ] );
+        $pipe->add( 'cmd1', [ input => 'INPUT', output => 'OUTPUT' ] );
+        $pipe->add( 'cmd2', [ input => 'INPUT', output => 'OUTPUT' ] );
+        $pipe->add( 'cmd3', [ input => 'INPUT', output => 'OUTPUT' ] );
 	$pipe->valrep( 'OUTPUT', 'stdout', 'output_file' );
+	$pipe->valrep( 'INPUT', 'stdin', undef, 'input_file' );
 	print $pipe->dump, "\n"
 
 results in
 
-		cmd1 \
-		  output=stdout\
-	|	cmd2 \
-		  output=stdout\
-	|	cmd3 \
-		  output=output_file
-	
+	        cmd1 \
+		  input=input_file \
+	          output=stdout \
+	|       cmd2 \
+	          input=stdin \
+	          output=stdout \
+	|       cmd3 \
+	          input=stdin \
+	          output=output_file
 
 =cut
 
@@ -635,13 +664,35 @@ sub valrep
   my $pattern = shift;
   my $value = shift;
   my $lastvalue = shift;
+  my $firstvalue = shift;
 
-  foreach ( reverse @{$self->{cmd}} )
+  $lastvalue  ||= $value;
+  $firstvalue ||= $value;
+
+  my $match = 0;
+  my $nmatch = $self->_valmatch( $pattern );
+
+  foreach ( @{$self->{cmd}} )
   {
-    # if there was a match, no longer need last value
-    $lastvalue = undef if
-      $_->valrep( $pattern, $value, $lastvalue );
+    $match += $_->valrep( $pattern,
+			  $match == 0             ? $firstvalue : 
+			  $match == ($nmatch - 1) ? $lastvalue :
+			                            $value
+			);
   }
+}
+
+sub _valmatch
+{
+  my $self = shift;
+  my $pattern = shift;
+
+  my $match = 0;
+  foreach ( @{$self->{cmd}} )
+  {
+    $match += $_->_valmatch($pattern);
+  }
+  $match;
 }
 
 sub _error
@@ -719,7 +770,7 @@ defaults to the default value for the parent B<PipeC> object when the
 B<PipeC::Cmd> object was created, which may be set via the B<PipeC::argsep>
 method, or when the initial B<PipeC> object is created.  
 
-=item valrep( $pattern, $value, [$lastvalue] )
+=item valrep( $pattern, $value, [$lastvalue, [$firstvalue] ] )
 
 Replace arguments to options whose arguments match the Perl regular
 expression, I<$pattern> with I<$value>.  If I<$lastvalue> is
@@ -742,7 +793,22 @@ results in
 	          opt2=FOO2
 	
 
-This is admittedly of little use.  Any thoughts on how to make it useful?
+If I<$firstvalue> is specified, the first matched argument will be
+replaced with I<$lastvalue>:
+
+        $cmd = $pipe->add( 'cmd1' );
+        $cmd->add( [ opt1 => 'FOO' ] );
+        $cmd->add( [ opt2 => 'FOO' ] );
+
+	$cmd->valrep( 'FOO', 'FOO1', undef, 'FOO2' );
+	print $cmd->dump, "\n"
+
+results in
+
+	        cmd1 \
+	          opt1=FOO2 \
+	          opt2=FOO1
+
 
 =back
 
