@@ -7,7 +7,7 @@ use Carp;
 use vars qw( $VERSION );
 use Data::Dumper;
 
-$VERSION = '1.01';
+$VERSION = '1.02';
 
 sub new
 {
@@ -455,38 +455,46 @@ sub argsep
     unless defined ( $self->{attr}->{ArgSep} = shift );
 }
 
+=item stdin( $stdin )
+
+This specifies a file to which the standard input stream of the
+pipeline will be connected. if I<$stdout> is C<undef> or unspecified,
+it cancels any value previously set.
+
+=cut
+
+sub stdin
+{
+  my $self = shift;
+  $self->{stdin} = shift;
+}
+
 =item stdout( $stdout )
 
-This specifies an alternate location for the standard output stream of
-the pipeline. if I<$stdout> is C<undef> or unspecified, it cancels any
-value previously set.
+This specifies a file to which the standard output stream of the
+pipeline will be written. if I<$stdout> is C<undef> or unspecified, it
+cancels any value previously set.
 
 =cut
 
 sub stdout
 {
   my $self = shift;
-  my $stdout = shift;
-
-  $self->{stdout} = $stdout;
-
+  $self->{stdout} = shift;
 }
 
 =item stderr( $stderr )
 
-This specifies an alternate location for the standard output stream of
-the pipeline. if I<$stderr> is C<undef> or unspecified, it cancels any
-value previously set.
+This specifies a file to which the standard output stream of the
+pipeline will be written. if I<$stderr> is C<undef> or unspecified, it
+cancels any value previously set.
 
 =cut
 
 sub stderr
 {
   my $self = shift;
-  my $stderr = shift;
-
-  $self->{stderr} = $stderr;
-
+  $self->{stderr} = shift;
 }
 
 =item dump( \%attr )
@@ -541,12 +549,19 @@ sub dump
 		    map { $_->dump( $attr) } @{$self->{cmd}} );
 
 
+  if ( $self->{stderr} || $self->{stdin} || $self->{stdout} )
+  {
+    $pipe = '(' . $pipe . $attr{CmdSep} . ')';
+  }
+
+  $pipe .= $attr{CmdSep} . '<' . $attr{CmdPfx} . $self->{stdin}
+    if $self->{stdin};
+
   $pipe .= $attr{CmdSep} . '>' . $attr{CmdPfx} . $self->{stdout}
     if $self->{stdout};
 
   if ( defined $self->{stderr} )
   {
-    $pipe = '(' . $pipe . $attr{CmdSep} . ')';
     if ( $self->{stdout} && $self->{stderr} eq $self->{stdout} )
     {
       $pipe .= $attr{CmdSep} . $attr{CmdPfx} . '2>&1';
