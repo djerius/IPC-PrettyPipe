@@ -1,0 +1,4 @@
+gmake
+gmake install-prefix=/proj/axaf/simul install
+gmake docs.html
+gmake install-prefix=/proj/axaf/simul install-docs

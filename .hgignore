@@ -1,0 +1,7 @@
+(^|/)CVS($|/)
+(^|/)\.hg($|/)
+(^|/)\.hgtags($|/)
+^project.log$
+^project.state$
+^project.state.old$
+^project.state.journal$
