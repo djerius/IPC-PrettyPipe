@@ -7,9 +7,9 @@ use Carp;
 use vars qw( $VERSION $MAGIC_CHARS);
 use Data::Dumper;
 
-$VERSION = '1.04';
+$VERSION = '1.05';
 
-$MAGIC_CHARS = q/\\\$"'!*{};()[]/; #";
+$MAGIC_CHARS = q/\\\$"'!*{};()[]<>&/; #";
 $MAGIC_CHARS =~ s/(\W)/\\$1/g;
 
 sub new
@@ -218,9 +218,9 @@ sub _shell_escape
     # remove obvious duplicate quotes.
     $str =~ s/(^|[^\\])''/$1/g;
   }
-  elsif ( $str =~ /[$MAGIC_CHARS]/ )
+  elsif ( $str =~ /[$MAGIC_CHARS]/o )
   {
-    $str =~  s/([$MAGIC_CHARS])/\\$1/g;
+    $str =~  s/([$MAGIC_CHARS])/\\$1/og;
   }
 
   # empty string
