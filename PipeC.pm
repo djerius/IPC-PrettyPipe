@@ -17,6 +17,10 @@ sub new
   my $self = {
               attr => { 
 		       ArgSep => '=',
+		       CmdPfx => "\t",
+		       CmdOptSep => " \\\n",
+		       OptSep => " \\\n",
+		       OptPfx => "\t  ",
 		       RaiseError => 0
 		      },
 	      cmd => undef,
@@ -107,13 +111,7 @@ sub dump
   $self->_error( "illegal attribute argument to dump\n" )
     if defined $attr && 'HASH' ne ref($attr);
 
-  my %attr = ( CmdPfx => "\t",
-	       CmdOptSep => " \\\n",
-	       OptSep => " \\\n",
-	       OptPfx => "\t  ",
-	       ArgSep => $self->{attr}{ArgSep}, 
-	       $attr ? %$attr : ()
-	     );
+  my %attr = ( %{$self->{attr}}, $attr ? %$attr : ());
 
   my $cmd = $attr{CmdPfx} . $self->{cmd} . 
     ( @{$self->{args}} ? $attr{CmdOptSep} . $attr{OptPfx} : '')
@@ -332,11 +330,47 @@ sub new
   return $self;
 }
 
-=item add( $command, <arguments> )
+=item add( [\%attr,] $command, <arguments> )
 
-This adds a new command to the C<PipeC> object.  It returns a handle to
-the command (which is itself a C<PipeC::Cmd> object).  Arguments to the
-command may be specified in one of the following ways:
+This adds a new command to the C<PipeC> object.  It returns a handle
+to the command (which is itself a C<PipeC::Cmd> object).  The optional
+hash may be used to set attributes for the command.
+The I<\%attr> hash
+may contain one of the following key/value pairs:
+
+=over 8
+
+=item CmdSep
+
+The string to print between commands.  Defaults to " \n".
+
+=item CmdPfx
+
+The string to print before the command.  It defaults to "\t" to
+line things up nicely.
+
+=item CmdOptSep
+
+The string to print between the command and the first option. Defaults to
+" \\\n".
+
+=item OptPfx
+
+The string to print before each option.  Defaults to "\t".
+
+=item OptSep
+
+The string to print between the options.  Defaults to " \\\n".
+
+=item ArgSep
+
+The argument separator.  This defaults to separator in use at the time each
+command was created via the C<PipeC::add> method.
+
+=back
+
+Arguments to the command may be specified in one of the following
+ways:
 
 =over 8
 
