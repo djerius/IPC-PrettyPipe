@@ -7,7 +7,7 @@ use Carp;
 use vars qw( $VERSION );
 use Data::Dumper;
 
-$VERSION = '1.0';
+$VERSION = '1.01';
 
 sub new
 {
@@ -172,6 +172,7 @@ sub _shell_escape
 {
   my $str = shift;
 
+  my $magic_chars = q{\\\$"'!*{};};
   # if there's white space, single quote the entire word.  however,
   # since single quotes can't be escaped inside single quotes,
   # isolate them from the single quoted part and escape them.
@@ -187,9 +188,9 @@ sub _shell_escape
     # remove obvious duplicate quotes.
     $str =~ s/(^|[^\\])''/$1/g;
   }
-  elsif ( $str =~ /[\\\$"'!*{}]/ )
+  elsif ( $str =~ /[$magic_chars]/ )
   {
-    $str =~  s/([\\\$"'!*{}])/\\$1/g;
+    $str =~  s/([$magic_chars])/\\$1/g;
   }
   $str;
 }
