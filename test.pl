@@ -50,3 +50,18 @@ print "\n\n";
   print $p->dump, "\n";
   
 }
+
+print "\n\n";
+
+{
+  my $p = new PipeC;
+  $p->add( "cmd", [ input => INPUT, 
+		    snack => '(){}"[ ]"\'', 
+		    snoop => '(){}"[]"\'', 
+		    output => OUTPUT ] );
+  $p->valrep( 'INPUT', 'stdin', 'InputFile' );
+  $p->valrep( 'OUTPUT', 'stdout', undef, 'OutputFile' );
+ 
+  print $p->dump, "\n";
+  
+}

@@ -4,10 +4,13 @@
 package PipeC::Cmd;
 use strict;
 use Carp;
-use vars qw( $VERSION );
+use vars qw( $VERSION $MAGIC_CHARS);
 use Data::Dumper;
 
-$VERSION = '1.03';
+$VERSION = '1.04';
+
+$MAGIC_CHARS = q/\\\$"'!*{};()[]/; #";
+$MAGIC_CHARS =~ s/(\W)/\\$1/g;
 
 sub new
 {
@@ -199,7 +202,6 @@ sub _shell_escape
 {
   my $str = shift;
 
-  my $magic_chars = q{\\\$"'!*{};}; #"
 
   # if there's white space, single quote the entire word.  however,
   # since single quotes can't be escaped inside single quotes,
@@ -216,9 +218,9 @@ sub _shell_escape
     # remove obvious duplicate quotes.
     $str =~ s/(^|[^\\])''/$1/g;
   }
-  elsif ( $str =~ /[$magic_chars]/ )
+  elsif ( $str =~ /[$MAGIC_CHARS]/ )
   {
-    $str =~  s/([$magic_chars])/\\$1/g;
+    $str =~  s/([$MAGIC_CHARS])/\\$1/g;
   }
 
   # empty string

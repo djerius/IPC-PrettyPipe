@@ -1,14 +1,1 @@
-#!/bin/sh
-
-PL=PipeC
-DEST=/proj/axaf/simul
-
-perl Makefile.PL \
-     LIB=$DEST/lib/perl \
-     PREFIX=$DEST/lib/perl && \
-make && \
-make test && \
-make install && \
-make distclean
-
-pod2html $PL.pm > $DEST/doc/html/$PL.html
+gmake all
