@@ -2,14 +2,12 @@
 
 
 package PipeC::Cmd;
+
 use strict;
+use warnings;
 use Carp;
-use vars qw( $VERSION $MAGIC_CHARS);
-use Data::Dumper;
 
-$VERSION = '1.06';
-
-$MAGIC_CHARS = q/\\\$"'!*{};()[]<>&/; #";
+our $MAGIC_CHARS = q/\\\$"'!*{};()[]<>&/; #";
 $MAGIC_CHARS =~ s/(\W)/\\$1/g;
 
 sub new
@@ -287,11 +285,10 @@ Methods">
 
 package PipeC;
 
+our $VERSION = '1.07';
+
 use Carp;
 use strict;
-use vars qw( $VERSION );
-
-$VERSION = '1.0';
 
 =head2 PipeC Methods
 
@@ -328,7 +325,8 @@ sub new
               attr => { ArgSep => '=' },
               cmd => [ ],
 	      stdout => undef,
-	      stderr => undef
+	      stderr => undef,
+	      stderr2stdout => undef
              };
   
   bless $self, $class;
@@ -520,7 +518,23 @@ sub stderr
 {
   my $self = shift;
   $self->{stderr} = shift;
+  delete $self->{stderr2stdout};
 }
+
+=item stderr2stdout
+
+This will redirect the standard error stream to the standard output
+stream.  To cancel this, use B<stderr()>.
+
+=cut
+
+sub stderr2stdout
+{
+  my $self = shift;
+  $self->{stderr2stdout} = 1;
+}
+
+
 
 =item dump( \%attr )
 
@@ -574,7 +588,8 @@ sub dump
 		    map { $_->dump( $attr) } @{$self->{cmd}} );
 
 
-  if ( $self->{stderr} || $self->{stdin} || $self->{stdout} )
+  if ( $self->{stderr} || $self->{stdin} || 
+       $self->{stdout} || $self->{stderr2stdout} )
   {
     $pipe = '(' . $pipe . $attr{CmdSep} . ')';
   }
@@ -585,7 +600,11 @@ sub dump
   $pipe .= $attr{CmdSep} . '>' . $attr{CmdPfx} . $self->{stdout}
     if $self->{stdout};
 
-  if ( defined $self->{stderr} )
+  if ( $self->{stderr2stdout} )
+  {
+    $pipe .= $attr{CmdSep} . $attr{CmdPfx} . '2>&1';
+  }
+  elsif ( $self->{stderr} )
   {
     if ( $self->{stdout} && $self->{stderr} eq $self->{stdout} )
     {
@@ -884,7 +903,14 @@ which results in:
 The entire pipe is run as a subshell, to ensure that all of the commands'
 standard error streams go to the same place.
 
+=head1 LICENSE
+
+This software is released under the GNU General Public License.  You
+may find a copy at 
+
+   http://www.fsf.org/copyleft/gpl.html
+
 
 =head1 AUTHOR
 
-Diab Jerius ( djerius@cfa.harvard.edu )
+Diab Jerius (djerius@cfa.harvard.edu)

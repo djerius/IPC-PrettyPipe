@@ -55,7 +55,7 @@ print "\n\n";
 
 {
   my $p = new PipeC;
-  $p->add( "echoit", [ input => INPUT, 
+  $p->add( "echo", [ input => INPUT, 
 		    snack => '(){}"[ ]"\'', 
 		    snoop => '(){}"[]"\'', 
 		    snoop => '(){}"[]"&\'', 
@@ -68,3 +68,34 @@ print "\n\n";
   print $p->dump, "\n";
   $p->run();
 }
+
+print "\n\n";
+
+{
+  my $p = new PipeC;
+  $p->add( "cmd", [ input => INPUT, output => OUTPUT ] );
+  $p->valrep( 'INPUT', 'stdin', undef, 'InputFile' );
+  $p->valrep( 'OUTPUT', 'stdout', 'OutputFile' );
+
+  print $p->dump, "\n";
+
+  print "\n\n";
+
+  $p->stderr2stdout;
+  print $p->dump, "\n";
+  $p->stderr;
+
+  print "\n\n";
+
+  $p->stdout( 'foo' );
+  print $p->dump, "\n";
+  $p->stdout;
+
+  print "\n\n";
+
+  $p->stderr( 'foo' );
+  print $p->dump, "\n";
+
+  print "\n\n";
+}
+

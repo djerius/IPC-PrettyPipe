@@ -1,4 +1,7 @@
 Changes
+LICENSE
 MANIFEST
 Makefile.PL
 PipeC.pm
+README
+test.pl
