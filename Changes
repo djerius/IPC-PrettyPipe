@@ -1,5 +1,8 @@
 Revision history for Perl extension PipeC.
 
+1.08  Mon Nov 18 16:21:47 EST 2002
+      - added dumprun()
+
 1.07  Thu Mar 21 13:54:59 EST 2002
       - added stderr2stdout()
 

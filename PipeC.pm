@@ -265,6 +265,8 @@ PipeC - manage command pipes
 
   warn $pipe->dump, "\n";
 
+  $cmd_to_be_run = $pipe->dumprun;
+
   $pipe->run;
 
 
@@ -285,7 +287,7 @@ Methods">
 
 package PipeC;
 
-our $VERSION = '1.07';
+our $VERSION = '1.08';
 
 use Carp;
 use strict;
@@ -619,6 +621,25 @@ sub dump
   $pipe;
 }
 
+
+=item dumprun
+
+Return the string which would be generated and executed by the B<run()>
+method.  This isn't as pretty as the one returned by B<dump()>, but is
+is passing the command to another execution mechanism.
+
+=cut
+
+sub dumprun
+{
+  my $self = shift;
+
+  $self->dump( {
+		CmdPfx => '',
+		CmdOptSep => '',
+		OptPfx => ' '
+	       } );
+}
 
 =item run
 
