@@ -151,14 +151,15 @@ sub valrep
   my $lastvalue = shift;
   my $firstvalue = shift;
 
+  my $match = 0;
+  my $nmatch = $self->_valmatch( $pattern );
+
+  $firstvalue ||= $lastvalue if $nmatch == 1;
   $lastvalue  ||= $value;
   $firstvalue ||= $value;
 
   # first value may be special
   my $curvalue = $firstvalue;
-
-  my $match = 0;
-  my $nmatch = $self->_valmatch( $pattern );
 
   foreach ( @{$self->{args}} )
   {
@@ -666,15 +667,21 @@ sub valrep
   my $lastvalue = shift;
   my $firstvalue = shift;
 
-  $lastvalue  ||= $value;
-  $firstvalue ||= $value;
-
   my $match = 0;
   my $nmatch = $self->_valmatch( $pattern );
 
+  # if there's only one match and firstvalue isn't set,
+  # need to do something special so that lastvalue
+  # will get used
+
+  $firstvalue ||= $lastvalue if $nmatch == 1;
+  $lastvalue  ||= $value;
+  $firstvalue ||= $value;
+
+
   foreach ( @{$self->{cmd}} )
   {
-    $match += $_->valrep( $pattern,
+    $match ++ if $_->valrep( $pattern,
 			  $match == 0             ? $firstvalue : 
 			  $match == ($nmatch - 1) ? $lastvalue :
 			                            $value
@@ -690,7 +697,7 @@ sub _valmatch
   my $match = 0;
   foreach ( @{$self->{cmd}} )
   {
-    $match += $_->_valmatch($pattern);
+    $match++ if $_->_valmatch($pattern);
   }
   $match;
 }

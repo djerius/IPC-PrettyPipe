@@ -26,3 +26,27 @@ use PipeC;
   print $p->dump, "\n";
 
 }
+
+print "\n\n";
+
+{
+  my $p = new PipeC;
+  $p->add( "cmd", [ input => INPUT, output => OUTPUT ] );
+  $p->valrep( 'INPUT', 'stdin', undef, 'InputFile' );
+  $p->valrep( 'OUTPUT', 'stdout', 'OutputFile' );
+ 
+  print $p->dump, "\n";
+  
+}
+
+print "\n\n";
+
+{
+  my $p = new PipeC;
+  $p->add( "cmd", [ input => INPUT, output => OUTPUT ] );
+  $p->valrep( 'INPUT', 'stdin', 'InputFile' );
+  $p->valrep( 'OUTPUT', 'stdout', undef, 'OutputFile' );
+ 
+  print $p->dump, "\n";
+  
+}
