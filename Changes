@@ -1,6 +1,6 @@
 Revision history for Perl extension PipeC.
 
-1.03  Mon Aug 14 18:03:17 EDT 2000
+1.04  Mon Aug 14 18:03:17 EDT 2000
        - added ()[] to magic characters. 
        - _shell_escape wasn't quite doing the right trick when [] was
          added, so explicitly clean up magic characters
