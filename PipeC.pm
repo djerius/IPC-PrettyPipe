@@ -124,7 +124,8 @@ sub dump
 	   }
 	   else 
 	   {
-	     _shell_escape($_->[0]) . $attr{ArgSep} . _shell_escape($_->[1] ) ;
+	     _shell_escape($_->[0]) . $attr{ArgSep} . 
+	       _shell_escape($_->[1] eq '' ? '""' : $_->[1]) ;
 	   }
 	} @{$self->{args}}
 	);
@@ -191,6 +192,12 @@ sub _shell_escape
   elsif ( $str =~ /[$magic_chars]/ )
   {
     $str =~  s/([$magic_chars])/\\$1/g;
+  }
+
+  # empty string
+  elsif ( $str eq '' )
+  {
+    $str = "''";
   }
   $str;
 }
