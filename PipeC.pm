@@ -7,7 +7,7 @@ use Carp;
 use vars qw( $VERSION $MAGIC_CHARS);
 use Data::Dumper;
 
-$VERSION = '1.05';
+$VERSION = '1.06';
 
 $MAGIC_CHARS = q/\\\$"'!*{};()[]<>&/; #";
 $MAGIC_CHARS =~ s/(\W)/\\$1/g;
@@ -203,11 +203,12 @@ sub _shell_escape
   my $str = shift;
 
 
-  # if there's white space, single quote the entire word.  however,
-  # since single quotes can't be escaped inside single quotes,
-  # isolate them from the single quoted part and escape them.
-  # i.e., the string a 'b turns into 'a '\''b' 
-  if ( $str =~ /\s/ )
+  # if there's white space or a magic character, single quote the
+  # entire word.  however, since single quotes can't be escaped inside
+  # single quotes, isolate them from the single quoted part and escape
+  # them.  i.e., the string a 'b turns into 'a '\''b'
+
+  if ( $str =~ /[\s$MAGIC_CHARS]/o )
   {
     # isolate the lone single quotes
     $str =~ s/'/'\\''/g;
@@ -217,10 +218,6 @@ sub _shell_escape
 
     # remove obvious duplicate quotes.
     $str =~ s/(^|[^\\])''/$1/g;
-  }
-  elsif ( $str =~ /[$MAGIC_CHARS]/o )
-  {
-    $str =~  s/([$MAGIC_CHARS])/\\$1/og;
   }
 
   # empty string

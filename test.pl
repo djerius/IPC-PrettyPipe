@@ -55,13 +55,16 @@ print "\n\n";
 
 {
   my $p = new PipeC;
-  $p->add( "cmd", [ input => INPUT, 
+  $p->add( "echoit", [ input => INPUT, 
 		    snack => '(){}"[ ]"\'', 
 		    snoop => '(){}"[]"\'', 
+		    snoop => '(){}"[]"&\'', 
+		    snoop => '<>(){}"[]"\'', 
+		    snoop => '<>(){}"[]"\\\'', 
 		    output => OUTPUT ] );
   $p->valrep( 'INPUT', 'stdin', 'InputFile' );
   $p->valrep( 'OUTPUT', 'stdout', undef, 'OutputFile' );
  
   print $p->dump, "\n";
-  
+  $p->run();
 }
