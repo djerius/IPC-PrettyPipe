@@ -1,5 +1,8 @@
 Revision history for Perl extension PipeC.
 
+1.10  Tue Sep 19 16:51:00 EDT 2006
+      - reorganized code; no changes in functionality
+
 1.09  Mon Oct 18 19:30:47 EST 2004
       - changed GNUmakefile ==> GNUmakefile.local
 

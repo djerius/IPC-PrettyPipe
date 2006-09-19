@@ -1,3 +1,19 @@
+2006-09-19  Diab Jerius  <djerius@cfa.harvard.edu>
+
+	Tag: 1.10
+
+2006-09-19  dj  <dj@macabre.cfa.harvard.edu>
+
+	* lib/PipeC.pm, lib/PipeC/Cmd.pm:
+	updated error messages to use __PACKAGE__
+	[3c23a6c98758] [tip]
+
+	* MANIFEST, MANIFEST.SKIP, Makefile.PL, PipeC.pm, lib/PipeC.pm,
+	lib/PipeC/Cmd.pm, t/PipeC.t, t/test.pl, test.pl:
+	modernified the package layout; split PipeC::Cmd out of PipeC.pm.
+	updated docs.
+	[53df7a73c321]
+
 2004-10-18 19:35  tag V1_09
 
 2004-10-18 19:35  gaetz
