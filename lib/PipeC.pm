@@ -38,14 +38,14 @@ sub new
         }
         else
         {
-          $self->_error( "PipeC::new unknown attribute: $key\n" );
+          $self->_error( __PACKAGE__, "::new: unknown attribute: $key\n" );
           return undef;
         }
       }
     }
     else
     {
-      $self->_error( "unacceptable argument to PipeC::new\n" );
+      $self->_error( __PACKAGE__, "::new: unacceptable argument\n" );
       return undef;
     }
   }
@@ -73,7 +73,7 @@ sub argsep
 {
   my $self = shift;
 
-  $self->_error( "missing argument to argsep\n" )
+  $self->_error( __PACKAGE__, "::argsep: missing argument to argsep\n" )
     unless defined ( $self->{attr}->{ArgSep} = shift );
 }
 
@@ -174,7 +174,7 @@ sub valrep
 {
   my $self = shift;
 
-  $self->_error( "missing argument(s) to valrep\n" )
+  $self->_error( __PACKAGE__, "::valrep: missing argument(s)\n" )
     unless 2 <= @_;
 
   my $pattern = shift;

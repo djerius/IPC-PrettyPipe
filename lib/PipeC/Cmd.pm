@@ -39,13 +39,14 @@ sub new
       }
       else
       {
-	$self->_error( "PipeC::Cmd::new unknown attribute: $key\n" );
+	$self->_error( __PACKAGE__, "::new: unknown attribute: $key\n" );
 	return undef;
       }
     }
   }
 
-  $self->_error("missing or unacceptable type for command" )
+  $self->_error(__PACKAGE__, 
+		"::new: missing or unacceptable type for command" )
     if ! defined( $self->{cmd} = shift) || ref( $self->{cmd} );
 
   $self->add( @_ ) or return undef;
@@ -75,7 +76,8 @@ sub add
     {
       if ( @{$arg} % 2 )
       {
-	$self->_error( "odd number of elements in array: '@$arg'" );
+	$self->_error( __PACKAGE__,
+		       "::add: odd number of elements in array: '@$arg'" );
 	return undef;
       }
       for ( my $i = 0 ; $i < @{$arg} ; $i += 2 )
@@ -93,7 +95,8 @@ sub add
     # everything else
     else
     {
-      $self->_error( "unacceptable argument to PipeC::Cmd::add\n" );
+      $self->_error( __PACKAGE__,
+		     "::add: unacceptable argument to PipeC::Cmd::add\n" );
       return undef;
     }
   }
@@ -106,7 +109,7 @@ sub dump
   my $self = shift;
   my $attr = shift;
 
-  $self->_error( "illegal attribute argument to dump\n" )
+  $self->_error( __PACKAGE__, "::dump: illegal attribute argument\n" )
     if defined $attr && 'HASH' ne ref($attr);
 
   my %attr = ( %{$self->{attr}}, $attr ? %$attr : ());
@@ -133,7 +136,7 @@ sub argsep
 {
   my $self = shift;
 
-  $self->_error( "missing argument to argsep\n" )
+  $self->_error( __PACKAGE__, "::argsep: missing argument to argsep\n" )
     unless defined ( $self->{attr}->{ArgSep} = shift );
 }
 
@@ -141,7 +144,7 @@ sub valrep
 {
   my $self = shift;
 
-  $self->_error( "missing argument(s) to valrep\n" )
+  $self->_error( __PACKAGE__, "::valrep: missing argument(s) to valrep\n" )
     unless 2 <= @_;
 
   my $pattern = shift;
