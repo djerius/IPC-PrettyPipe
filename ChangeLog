@@ -1,0 +1,100 @@
+2004-10-18 19:35  tag V1_09
+
+2004-10-18 19:35  gaetz
+
+	* Changes, GNUmakefile, GNUmakefile.local, PipeC.pm: [no log
+	  message]
+
+2002-11-18 16:22  tag V1_08
+
+2002-11-18 16:22  dj
+
+	* Changes, PipeC.pm: added dumprun
+
+2002-04-12 17:19  tag V1_07
+
+2002-04-12 17:19  dj
+
+	* Changes, LICENSE, MANIFEST, MANIFEST.SKIP, PipeC.pm, README,
+	  test.pl: added stderr2stdout()
+
+2001-02-01 15:35  tag V1_06
+
+2001-02-01 15:35  dj
+
+	* PipeC.pm, test.pl: cleaned up escaped output to use far less
+	  backslashes
+
+2001-01-30 19:06  tag V1_05
+
+2001-01-30 19:06  dj
+
+	* Changes, PipeC.pm: added <>& to magic characters
+
+2000-08-14 18:05  tag V1_04
+
+2000-08-14 18:05  dj
+
+	* Changes: [no log message]
+
+2000-08-14 18:04  dj
+
+	* Changes, GNUmakefile, INSTALL, PipeC.pm, test.pl: fixes to magic
+	  chars, new GNUmakefile, INSTALL
+
+2000-03-12 21:41  dj
+
+	* PipeC.pm, test.pl: introduced change in behavior with addition of
+	  firstvalue to valrep.
+
+	  previously, if only one match was made and lastvalue was
+	  specified, lastvalue would prevail.  the bogus behavior was that
+	  lastvalue was only used if nmatch > 1.  now, if nmatch = 1 and
+	  firstvalue isn't specified, it is set to lastvalue.  this
+	  reestablishes the old behavior.
+
+2000-03-12 20:32  tag V1_03
+
+2000-03-12 20:32  dj
+
+	* PipeC.pm, test.pl: add firstvalue to valrep functions
+
+2000-01-21 09:55  tag V1_02
+
+2000-01-21 09:55  dj
+
+	* PipeC.pm: [no log message]
+
+2000-01-19 16:57  dj
+
+	* Changes, GNUmakefile, INSTALL, MANIFEST, Makefile.PL: [no log
+	  message]
+
+1999-04-09 13:49  dj
+
+	* PipeC.pm: handles empty arguments to options in a manner
+	  compatible with the perl parameter library
+
+1999-03-24 14:14  dj
+
+	* PipeC.pm: semicolons weren't being recognized as shell
+	  meta-characters
+
+1999-03-16 16:39  dj
+
+	* PipeC.pm: added ability to set attributes in PipeC::add
+
+1999-03-12 14:48  dj
+
+	* PipeC.pm: valrep prematurely gave up on the lastvalue
+
+1999-03-11 12:17  tag initial
+
+1999-03-11 12:17  dj
+
+	* GNUmakefile, INSTALL, PipeC.pm: Initial revision
+
+1999-03-11 12:17  dj
+
+	* GNUmakefile, INSTALL, PipeC.pm: [no log message]
+
