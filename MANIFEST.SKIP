@@ -13,3 +13,4 @@ CONTRIB
 ^MakeMaker-\d
 CVS/
 ^pm_to_blib
+^.hg

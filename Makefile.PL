@@ -3,5 +3,5 @@ use ExtUtils::MakeMaker;
 # the contents of the Makefile that is written.
 WriteMakefile(
     'NAME'	=> 'PipeC',
-    'VERSION_FROM' => 'PipeC.pm', # finds $VERSION
+    'VERSION_FROM' => 'lib/PipeC.pm', # finds $VERSION
 );

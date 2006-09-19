@@ -1,7 +1,10 @@
+ChangeLog
 Changes
+lib/PipeC.pm
+lib/PipeC/Cmd.pm
 LICENSE
-MANIFEST
 Makefile.PL
-PipeC.pm
+MANIFEST
 README
-test.pl
+t/PipeC.t
+t/test.pl
