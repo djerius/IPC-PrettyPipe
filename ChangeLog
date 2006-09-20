@@ -1,8 +1,12 @@
+2006-09-20 16:37 -0400  dj  <dj@macabre.cfa.harvard.edu>  (52788c5648f3 [tip])
+
+	Tag: 1.11
+	* README, lib/PipeC.pm, lib/PipeC/Cmd.pm:
+	added license/copyright info
+
 2006-09-19  Diab Jerius  <djerius@cfa.harvard.edu>
 
 	Tag: 1.10
-
-2006-09-19  dj  <dj@macabre.cfa.harvard.edu>
 
 	* lib/PipeC.pm, lib/PipeC/Cmd.pm:
 	updated error messages to use __PACKAGE__

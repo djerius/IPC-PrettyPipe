@@ -1,5 +1,8 @@
 Revision history for Perl extension PipeC.
 
+1.11  Wed Sep 20 16:37:38 EDT 2006
+      - added copyright to source files
+
 1.10  Tue Sep 19 16:51:00 EDT 2006
       - reorganized code; no changes in functionality
 
