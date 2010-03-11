@@ -1,36 +1,33 @@
 # --8<--8<--8<--8<--
 #
-# Copyright (C) 2006 Smithsonian Astrophysical Observatory
+# Copyright (C) 2010 Smithsonian Astrophysical Observatory
 #
-# This file is part of PipeC
+# This file is part of IPC::PipeC
 #
-# PipeC is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
+# IPC::PipeC is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or (at
+# your option) any later version.
 #
-# PipeC is distributed in the hope that it will be useful,
+# This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the 
-#       Free Software Foundation, Inc. 
-#       51 Franklin Street, Fifth Floor
-#       Boston, MA  02110-1301, USA
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # -->8-->8-->8-->8--
 
-package PipeC;
+package IPC::PipeC;
 
-our $VERSION = '1.11';
+our $VERSION = '1.11_01';
 
 use Carp;
 use strict;
 use warnings;
 
-use PipeC::Cmd;
+use IPC::PipeC::Cmd;
 
 sub new
 {
@@ -81,7 +78,7 @@ sub add
 {
   my $self = shift;
 
-  my $cmd = PipeC::Cmd->new( @_ );
+  my $cmd = IPC::PipeC::Cmd->new( @_ );
 
   if ( $cmd )
   {
@@ -259,13 +256,13 @@ __END__
 
 =head1 NAME
 
-PipeC - manage command pipes
+IPC::PipeC - manage command pipes
 
 =head1 SYNOPSIS
 
-  use PipeC;
+  use IPC::PipeC;
 
-  my $pipe = new PipeC;
+  my $pipe = new IPC::PipeC;
 
   $pipe->argsep( ' ' );
 
@@ -288,15 +285,15 @@ PipeC - manage command pipes
 
 =head1 DESCRIPTION
 
-B<PipeC> provides a mechanism to maintain readable execution
-pipelines.  Pipelines are created by adding commands to a B<PipeC>
+B<IPC::PipeC> provides a mechanism to maintain readable execution
+pipelines.  Pipelines are created by adding commands to a B<IPC::PipeC>
 object.  Options to the commands are set using a readable format;
-B<PipeC> takes care of quoting strings, sticking equal signs in, etc.
+B<IPC::PipeC> takes care of quoting strings, sticking equal signs in, etc.
 The pipeline may be rendered into a nicely formatted string, as well
 as being executed (currently by the Bourne shell, B</bin/sh>).
 
-B<PipeC> actually manages a list of B<PipeC::Cmd> objects.  See
-L<PipeC::Cmd> for more information.
+B<IPC::PipeC> actually manages a list of B<IPC::PipeC::Cmd> objects.  See
+L<IPC::PipeC::Cmd> for more information.
 
 
 =head1 METHODS
@@ -305,7 +302,7 @@ L<PipeC::Cmd> for more information.
 
 =item new [\%attr]
 
-B<new> creates a new C<PipeC> object with the optionally specified
+B<new> creates a new C<IPC::PipeC> object with the optionally specified
 attributes.  The attributes are specified via a hash, which may have
 the following keys:
 
@@ -316,7 +313,7 @@ the following keys:
 This specifies the default string to separate arguments from their
 values.  It defaults to the C<=> character.  New commands inherit the
 current value of the B<ArgSep> string.  The default value may also be
-changed with the B<argsep> method for B<PipeC> objects.  The separator
+changed with the B<argsep> method for B<IPC::PipeC> objects.  The separator
 for a given command may be changed with the B<argsep> method for the
 command.
 
@@ -325,8 +322,8 @@ command.
 
 =item add( [\%attr,] $command, <arguments> )
 
-This adds a new command to the C<PipeC> object.  It returns a handle
-to the command (which is itself a C<PipeC::Cmd> object).  The optional
+This adds a new command to the C<IPC::PipeC> object.  It returns a handle
+to the command (which is itself a C<IPC::PipeC::Cmd> object).  The optional
 hash may be used to set attributes for the command.
 The I<\%attr> hash
 may contain one of the following key/value pairs:
@@ -358,7 +355,7 @@ The string to print between the options.  Defaults to " \\\n".
 =item ArgSep
 
 The argument separator.  This defaults to separator in use at the time each
-command was created via the C<PipeC::add> method.
+command was created via the C<IPC::PipeC::add> method.
 
 =back
 
@@ -410,9 +407,9 @@ The different methods of option specification may be mixed, e.g.,
 
 =item argsep( $argsep )
 
-This sets the default B<PipeC> string which separates options and their
+This sets the default B<IPC::PipeC> string which separates options and their
 arguments.  This affects subsequent commands added to the pipe only.
-The  B<PipeC::Cmd::argsep> method is available for existing commands.
+The  B<IPC::PipeC::Cmd::argsep> method is available for existing commands.
 
 =item stdin( $stdin )
 
@@ -472,7 +469,7 @@ The string to print between the options.  Defaults to " \\\n".
 =item ArgSep
 
 The argument separator.  This defaults to separator in use at the time each
-command was created via the C<PipeC::add> method.
+command was created via the C<IPC::PipeC::add> method.
 
 =back
 
@@ -499,7 +496,7 @@ argument will be replaced with I<$firstvalue>.
 
 For example,
 
-  my $pipe = new PipeC;
+  my $pipe = new IPC::PipeC;
   $pipe->add( 'cmd1', [ input => 'INPUT', output => 'OUTPUT' ] );
   $pipe->add( 'cmd2', [ input => 'INPUT', output => 'OUTPUT' ] );
   $pipe->add( 'cmd3', [ input => 'INPUT', output => 'OUTPUT' ] );
@@ -529,7 +526,7 @@ end. In the following example the programs recognize the token
 C<stdout> to refer to the standard output stream; this is specific to
 their implementation.
 
-  my $pipe = new PipeC;
+  my $pipe = new IPC::PipeC;
   $pipe->add( 'genphot',
   	    { output	=> 'OUTPUT',
   	      photdens  => 0.001 }
@@ -558,7 +555,7 @@ This results in:
 If programs can write to C<stdout> directly, one can use the B<stdout()>
 (and likewise B<stderr()> method), if need be:
 
-  my $pipe = new PipeC;
+  my $pipe = new IPC::PipeC;
   $pipe->add( 'ls' );
   $pipe->add( 'wc' );
   $pipe->stdout( 'line_count' );

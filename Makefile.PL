@@ -1,7 +1,8 @@
-use ExtUtils::MakeMaker;
-# See lib/ExtUtils/MakeMaker.pm for details of how to influence
-# the contents of the Makefile that is written.
-WriteMakefile(
-    'NAME'	=> 'PipeC',
-    'VERSION_FROM' => 'lib/PipeC.pm', # finds $VERSION
-);
+use inc::Module::Install;
+
+name 'IPC-PipeC';
+all_from 'lib/IPC/PipeC.pm';
+
+requires 'IPC::Exe';
+
+WriteAll;

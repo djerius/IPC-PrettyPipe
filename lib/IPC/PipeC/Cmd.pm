@@ -1,28 +1,25 @@
 # --8<--8<--8<--8<--
 #
-# Copyright (C) 2006 Smithsonian Astrophysical Observatory
+# Copyright (C) 2010 Smithsonian Astrophysical Observatory
 #
-# This file is part of PipeC
+# This file is part of IPC::PipeC
 #
-# PipeC is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
+# IPC::PipeC is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or (at
+# your option) any later version.
 #
-# PipeC is distributed in the hope that it will be useful,
+# This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the 
-#       Free Software Foundation, Inc. 
-#       51 Franklin Street, Fifth Floor
-#       Boston, MA  02110-1301, USA
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # -->8-->8-->8-->8--
 
-package PipeC::Cmd;
+package IPC::PipeC::Cmd;
 
 use strict;
 use warnings;
@@ -120,7 +117,7 @@ sub add
     else
     {
       $self->_error( __PACKAGE__,
-		     "::add: unacceptable argument to PipeC::Cmd::add\n" );
+		     "::add: unacceptable argument to IPC::PipeC::Cmd::add\n" );
       return undef;
     }
   }
@@ -268,13 +265,13 @@ __END__
 
 =head1 NAME
 
-PipeC::Cmd - manage command pipe commands
+IPC::PipeC::Cmd - manage command pipe commands
 
 =head1 SYNOPSIS
 
-  use PipeC;
+  use IPC::PipeC;
   
-  my $pipe = new PipeC;
+  my $pipe = new IPC::PipeC;
   
   $pipe->argsep( ' ' );
   
@@ -291,20 +288,20 @@ PipeC::Cmd - manage command pipe commands
 
 =head1 DESCRIPTION
 
-B<PipeC::Cmd> objects are containers for the individual commands in a
-pipeline created by B<PipeC>.  
+B<IPC::PipeC::Cmd> objects are containers for the individual commands in a
+pipeline created by B<IPC::PipeC>.  
 
 =head1 METHODS
 
-B<PipeC::Cmd> objects have a class constructor, but it is rarely used.
-Instead, use the parent B<PipeC> object's B<add()> method.
+B<IPC::PipeC::Cmd> objects have a class constructor, but it is rarely used.
+Instead, use the parent B<IPC::PipeC> object's B<add()> method.
 
 =over 8
 
 =item add( <arguments> )
 
 This method adds additional arguments to the command.  The format of
-the arguments is the same as to the B<PipeC::add> method.  This is useful
+the arguments is the same as to the B<IPC::PipeC::add> method.  This is useful
 if some arguments should be conditionally given, e.g.
 
 	$cmd = $pipe->add( 'ls' );
@@ -339,16 +336,16 @@ The string to print between the options.  Defaults to " \\\n".
 =item ArgSep
 
 The argument separator.  This defaults to separator in use at the time each
-command was created via the C<PipeC::add> method.
+command was created via the C<IPC::PipeC::add> method.
 
 =back
 
 =item argsep( $argsep )
 
 This specifies the string used to separate arguments from their values.  It
-defaults to the default value for the parent B<PipeC> object when the
-B<PipeC::Cmd> object was created, which may be set via the B<PipeC::argsep>
-method, or when the initial B<PipeC> object is created.
+defaults to the default value for the parent B<IPC::PipeC> object when the
+B<IPC::PipeC::Cmd> object was created, which may be set via the B<IPC::PipeC::argsep>
+method, or when the initial B<IPC::PipeC> object is created.
 
 =item valrep( $pattern, $value, [$lastvalue, [$firstvalue] ] )
 
