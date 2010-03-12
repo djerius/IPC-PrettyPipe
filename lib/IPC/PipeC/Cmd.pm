@@ -35,7 +35,7 @@ sub new
 
   my $self = {
               attr => {
-		       ArgSep => '=',
+		       ArgSep => undef,
 		       CmdPfx => "\t",
 		       CmdOptSep => " \\\n",
 		       OptSep => " \\\n",
@@ -61,7 +61,7 @@ sub new
       else
       {
 	$self->_error( __PACKAGE__, "::new: unknown attribute: $key\n" );
-	return undef;
+	return;
       }
     }
   }
@@ -70,7 +70,7 @@ sub new
 		"::new: missing or unacceptable type for command" )
     if ! defined( $self->{cmd} = shift) || ref( $self->{cmd} );
 
-  $self->add( @_ ) or return undef;
+  $self->add( @_ ) or return;
 
   return $self;
 }
@@ -99,10 +99,11 @@ sub add
       {
 	$self->_error( __PACKAGE__,
 		       "::add: odd number of elements in array: '@$arg'" );
-	return undef;
+	return;
       }
       for ( my $i = 0 ; $i < @{$arg} ; $i += 2 )
       {
+	## no critic (ProhibitAccessOfPrivateData)
 	push @{$self->{args}}, [ $arg->[$i], $arg->[$i+1] ];
       }
     }
@@ -118,11 +119,26 @@ sub add
     {
       $self->_error( __PACKAGE__,
 		     "::add: unacceptable argument to IPC::PipeC::Cmd::add\n" );
-      return undef;
+      return;
     }
   }
 
   1;
+}
+
+sub render {
+
+    my ( $self ) = @_;
+
+    return [
+	    $self->{cmd},
+	    map {
+		     ! ref $_                      ? $_
+		   : defined $self->{attr}{ArgSep} ? join( $self->{attr}{ArgSep}, @{$_} )
+		                                   : @{$_} 
+						   ;
+	    } @{$self->{args}}
+	   ];
 }
 
 sub dump
@@ -135,6 +151,8 @@ sub dump
 
   my %attr = ( %{$self->{attr}}, $attr ? %$attr : ());
 
+  $attr{ArgSep} = ' ' if ! defined $attr{ArgSep};
+
   my $cmd = $attr{CmdPfx} . $self->{cmd} .
     ( @{$self->{args}} ? $attr{CmdOptSep} . $attr{OptPfx} : '')
         .
@@ -146,7 +164,8 @@ sub dump
 	   }
 	   else
 	   {
-	     _shell_escape($_->[0]) . $attr{ArgSep} .
+	       ## no critic (ProhibitAccessOfPrivateData)
+	       _shell_escape($_->[0]) . $attr{ArgSep} .
 	       _shell_escape($_->[1] eq '' ? '""' : $_->[1]) ;
 	   }
 	} @{$self->{args}}
@@ -157,9 +176,12 @@ sub argsep
 {
   my $self = shift;
 
-  $self->_error( __PACKAGE__, "::argsep: missing argument to argsep\n" )
-    unless defined ( $self->{attr}->{ArgSep} = shift );
+  @_ || $self->_error( __PACKAGE__, "::argsep: missing argument to argsep\n" );
+
+  $self->{attr}->{ArgSep} = shift;
+
 }
+
 
 sub valrep
 {
@@ -191,6 +213,7 @@ sub valrep
     $curvalue = $lastvalue
       if ($match + 1) == $nmatch;
 
+    ## no critic (ProhibitAccessOfPrivateData)
     if ( $_->[1] =~ s/$pattern/$curvalue/ )
     {
       $match++;
@@ -210,6 +233,7 @@ sub _valmatch
   foreach ( @{$self->{args}} )
   {
     next unless ref( $_ );
+      ## no critic (ProhibitAccessOfPrivateData)
     $match++ if $_->[1] =~ /$pattern/;
   }
   $match;
@@ -270,26 +294,26 @@ IPC::PipeC::Cmd - manage command pipe commands
 =head1 SYNOPSIS
 
   use IPC::PipeC;
-  
+
   my $pipe = new IPC::PipeC;
-  
+
   $pipe->argsep( ' ' );
-  
+
   $pipe->add( $command, $arg1, $arg2 );
   $pipe->add( $command, $arg1, { option => value } );
   my $cmd = $pipe->add( $command, $arg1,
                      [ option1 => value1, option2 => value2] );
-  
+
   $cmd->add( $arg1, $args, { option => value },
 		  [option => value, option => value ] )
-  
+
   $cmd->argsep( '=' );
-  
+
 
 =head1 DESCRIPTION
 
 B<IPC::PipeC::Cmd> objects are containers for the individual commands in a
-pipeline created by B<IPC::PipeC>.  
+pipeline created by B<IPC::PipeC>.
 
 =head1 METHODS
 
@@ -298,7 +322,50 @@ Instead, use the parent B<IPC::PipeC> object's B<add()> method.
 
 =over 8
 
-=item add( <arguments> )
+=item new
+
+  $obj = IPC::PipeC::Cmd->new( \%attr );
+
+Create a B<IPC::PipeC::Cmd> object. The optional attribute hash
+may contain the following keys:
+
+=over 8
+
+=item CmdPfx
+
+The string to print before the command.  It defaults to C<\t> to
+line things up nicely.
+
+=item CmdOptSep
+
+The string to print between the command and the first option.
+This defaults to  C< \\n>.
+
+=item OptPfx
+
+The string to print before each option.
+This defaults to C<\t  >.
+
+=item OptSep
+
+The string to print between the options.
+This defaults to C< \\n>.
+
+=item ArgSep
+
+This specifies the default string to separate arguments from their
+values.  If this is undefined (the default), the argument name and
+value are passed to the command separately.  The dumped output will
+use a space.
+
+=item RaiseError
+
+If true, throws exceptions upon error. This defaults to C<0>.
+
+=back
+
+
+=item add( @arguments )
 
 This method adds additional arguments to the command.  The format of
 the arguments is the same as to the B<IPC::PipeC::add> method.  This is useful
@@ -307,45 +374,20 @@ if some arguments should be conditionally given, e.g.
 	$cmd = $pipe->add( 'ls' );
 	$cmd->add( '-l' ) if $want_long_listing;
 
+=item render
+
+Returns an arrayref containing the command and its arguments, as appropriate
+for passing to B<IPC::Run>.
+
 =item dump( \%attr )
 
 This method returns a string containing the command and its arguments.
-By default, this is a "pretty" representation.  The I<\%attr> hash
-may contain one of the following key/value pairs to change the output format:
-
-=over 8
-
-=item CmdPfx
-
-The string to print before the command.  It defaults to "\t" to
-line things up nicely.
-
-=item CmdOptSep
-
-The string to print between the command and the first option. Defaults to
-" \\\n".
-
-=item OptPfx
-
-The string to print before each option.  Defaults to "\t".
-
-=item OptSep
-
-The string to print between the options.  Defaults to " \\\n".
-
-=item ArgSep
-
-The argument separator.  This defaults to separator in use at the time each
-command was created via the C<IPC::PipeC::add> method.
-
-=back
+By default, this is a "pretty" representation.  The I<\%attr> hash is
+optional may contain any of the documented for the B<new> method.
 
 =item argsep( $argsep )
 
-This specifies the string used to separate arguments from their values.  It
-defaults to the default value for the parent B<IPC::PipeC> object when the
-B<IPC::PipeC::Cmd> object was created, which may be set via the B<IPC::PipeC::argsep>
-method, or when the initial B<IPC::PipeC> object is created.
+This changes the B<ArgSep> attribute to the specified value.
 
 =item valrep( $pattern, $value, [$lastvalue, [$firstvalue] ] )
 
@@ -383,6 +425,8 @@ results in
 	        cmd1 \
 	          opt1=FOO2 \
 	          opt2=FOO1
+
+=back
 
 =head1 COPYRIGHT & LICENSE
 

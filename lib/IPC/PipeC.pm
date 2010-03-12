@@ -21,13 +21,16 @@
 
 package IPC::PipeC;
 
-our $VERSION = '1.11_01';
-
-use Carp;
 use strict;
 use warnings;
 
+use Carp;
+
+use IPC::Run ();
 use IPC::PipeC::Cmd;
+
+our $VERSION = '1.11_01';
+
 
 sub new
 {
@@ -35,11 +38,10 @@ sub new
   my $class = ref($this) || $this;
 
   my $self = {
-              attr => { ArgSep => '=' },
+              attr => { ArgSep => undef },
               cmd => [ ],
 	      stdout => undef,
 	      stderr => undef,
-	      stderr2stdout => undef
              };
 
   bless $self, $class;
@@ -60,14 +62,14 @@ sub new
         else
         {
           $self->_error( __PACKAGE__, "::new: unknown attribute: $key\n" );
-          return undef;
+          return;
         }
       }
     }
     else
     {
       $self->_error( __PACKAGE__, "::new: unacceptable argument\n" );
-      return undef;
+      return;
     }
   }
 
@@ -94,8 +96,10 @@ sub argsep
 {
   my $self = shift;
 
-  $self->_error( __PACKAGE__, "::argsep: missing argument to argsep\n" )
-    unless defined ( $self->{attr}->{ArgSep} = shift );
+  @_ || $self->_error( __PACKAGE__, "::argsep: missing argument to argsep\n" );
+
+  $self->{attr}->{ArgSep} = shift;
+
 }
 
 sub stdin
@@ -114,14 +118,8 @@ sub stderr
 {
   my $self = shift;
   $self->{stderr} = shift;
-  delete $self->{stderr2stdout};
 }
 
-sub stderr2stdout
-{
-  my $self = shift;
-  $self->{stderr2stdout} = 1;
-}
 
 sub dump
 {
@@ -136,8 +134,7 @@ sub dump
 		    map { $_->dump( $attr) } @{$self->{cmd}} );
 
 
-  if ( $self->{stderr} || $self->{stdin} ||
-       $self->{stdout} || $self->{stderr2stdout} )
+  if ( $self->{stderr} || $self->{stdin} || $self->{stdout} )
   {
     $pipe = '(' . $pipe . $attr{CmdSep} . ')';
   }
@@ -148,11 +145,7 @@ sub dump
   $pipe .= $attr{CmdSep} . '>' . $attr{CmdPfx} . $self->{stdout}
     if $self->{stdout};
 
-  if ( $self->{stderr2stdout} )
-  {
-    $pipe .= $attr{CmdSep} . $attr{CmdPfx} . '2>&1';
-  }
-  elsif ( $self->{stderr} )
+  if ( $self->{stderr} )
   {
     if ( $self->{stdout} && $self->{stderr} eq $self->{stdout} )
     {
@@ -167,28 +160,40 @@ sub dump
   $pipe;
 }
 
-sub dumprun
-{
-  my $self = shift;
-
-  $self->dump( {
-		CmdPfx => '',
-		CmdOptSep => '',
-		OptPfx => ' '
-	       } );
-}
 
 sub run
 {
   my $self = shift;
 
+  # create list of commands in form appropriate for IPC::Run
+  my @cmds = map { $_->render } @{$self->{cmd}};
 
-  system( $self->dump( {
-			CmdPfx => '',
-			CmdOptSep => '',
-			OptPfx => ' '
-		       }) );
+  # now create harness.  this will include any redirections as well
+  # as the pipe directives
+  my @harness;
 
+  # start harness off with first command
+  push @harness, shift @cmds;
+
+  # insert stdin redirection if requested.
+  push @harness, '<', $self->{stdin}
+    if defined $self->{stdin};
+
+  # handle redirection of stderr.  this is done on a per process basis
+  # to avoid any close-on-exec problems.  i don't know of any problems,
+  # but why not avoid them?
+
+  my @stderr = defined $self->{stderr} ? ( '2>>', $self->{stderr} ) : ();
+
+  # add rest of commands
+  push @harness, map { ('|', $_, @stderr) } @cmds;
+
+  # insert stdout redirection if requested.
+  push @harness, '>', $self->{stdout}
+    if defined $self->{stdout};
+
+
+  return IPC::Run::run( @harness )
 }
 
 sub valrep
@@ -270,16 +275,16 @@ IPC::PipeC - manage command pipes
   $pipe->add( $command, $arg1, { option => value } );
   my $cmd = $pipe->add( $command, $arg1,
                      [ option1 => value1, option2 => value2] );
-  
+
   $cmd->add( $arg1, $args, { option => value },
 		  [option => value, option => value ] )
-  
+
   $cmd->argsep( '=' );
-  
+
   warn $pipe->dump, "\n";
-  
+
   $cmd_to_be_run = $pipe->dumprun;
-  
+
   $pipe->run;
 
 
@@ -300,7 +305,7 @@ L<IPC::PipeC::Cmd> for more information.
 
 =over 8
 
-=item new [\%attr]
+=item new( [\%attr] )
 
 B<new> creates a new C<IPC::PipeC> object with the optionally specified
 attributes.  The attributes are specified via a hash, which may have
@@ -311,53 +316,25 @@ the following keys:
 =item ArgSep
 
 This specifies the default string to separate arguments from their
-values.  It defaults to the C<=> character.  New commands inherit the
-current value of the B<ArgSep> string.  The default value may also be
-changed with the B<argsep> method for B<IPC::PipeC> objects.  The separator
-for a given command may be changed with the B<argsep> method for the
-command.
+values.  If this is undefined (the default), the argument name and
+value are passed to the command separately.  The dumped output will
+use a space.
+
+New commands inherit the current value of the B<ArgSep> string.  The
+default value may also be changed with the B<argsep> method for
+B<IPC::PipeC> objects.  The separator for a given command may be
+changed with the B<argsep> method for the command.
 
 
 =back
 
-=item add( [\%attr,] $command, <arguments> )
+=item add( [\%attr,] $command, @arguments )
 
-This adds a new command to the C<IPC::PipeC> object.  It returns a handle
-to the command (which is itself a C<IPC::PipeC::Cmd> object).  The optional
-hash may be used to set attributes for the command.
-The I<\%attr> hash
-may contain one of the following key/value pairs:
-
-=over 8
-
-=item CmdSep
-
-The string to print between commands.  Defaults to " \n".
-
-=item CmdPfx
-
-The string to print before the command.  It defaults to "\t" to
-line things up nicely.
-
-=item CmdOptSep
-
-The string to print between the command and the first option. Defaults to
-" \\\n".
-
-=item OptPfx
-
-The string to print before each option.  Defaults to "\t".
-
-=item OptSep
-
-The string to print between the options.  Defaults to " \\\n".
-
-=item ArgSep
-
-The argument separator.  This defaults to separator in use at the time each
-command was created via the C<IPC::PipeC::add> method.
-
-=back
+This creates an B<IPC::PipeC::Cmd> object, adds it to the
+B<IPC::PipeC> object, and returns a handle to it.  The optional hash
+may be used to set attributes for the command (see
+L<IPC::PipeC::Cmd>).  The command's B<ArgSep> attribute is set to that
+of the B<IPC::PipeC> object.
 
 Arguments to the command may be specified in one of the following
 ways:
@@ -407,9 +384,9 @@ The different methods of option specification may be mixed, e.g.,
 
 =item argsep( $argsep )
 
-This sets the default B<IPC::PipeC> string which separates options and their
-arguments.  This affects subsequent commands added to the pipe only.
-The  B<IPC::PipeC::Cmd::argsep> method is available for existing commands.
+This changes the value of the B<ArgSep> attribute for commands
+subsequently added to the pipe. Existing commands should use the
+B<IPC::PipeC::Cmd::argsep> method.
 
 =item stdin( $stdin )
 
@@ -431,60 +408,17 @@ This specifies a file to which the standard output stream of the
 pipeline will be written. if I<$stderr> is C<undef> or unspecified, it
 cancels any value previously set.
 
-=item stderr2stdout
-
-This will redirect the standard error stream to the standard output
-stream.  To cancel this, use B<stderr()>.
-
 =item dump( \%attr )
 
-This method returns a string containing the sequence of commands in the
-pipe. By default, this is a "pretty" representation.  The I<\%attr> hash
-may contain one of the following key/value pairs to change the output format:
+This method returns a string containing the sequence of commands in
+the pipe. By default, this is a "pretty" representation.  The
+I<\%attr> hash may contain any of the attributes documented
+for the B<IPC::PipeC::Cmd::new> method.
 
-=over 8
-
-=item CmdSep
-
-The string to print between commands.  Defaults to " \n".
-
-=item CmdPfx
-
-The string to print before the command.  It defaults to "\t" to
-line things up nicely.
-
-=item CmdOptSep
-
-The string to print between the command and the first option. Defaults to
-" \\\n".
-
-=item OptPfx
-
-The string to print before each option.  Defaults to "\t".
-
-=item OptSep
-
-The string to print between the options.  Defaults to " \\\n".
-
-=item ArgSep
-
-The argument separator.  This defaults to separator in use at the time each
-command was created via the C<IPC::PipeC::add> method.
-
-=back
-
-=item dumprun
-
-Return the string which would be generated and executed by the
-B<run()> method.  This isn't as pretty as the one returned by
-B<dump()>, but it is useful for passing the command to another
-execution mechanism.
 
 =item run
 
-Execute the pipe.  Currently this is done by passing it to the Perl
-system command and using the Bourne shell to evaluate the pipe.  It
-returns the value returned by the system call.
+Execute the pipe.  Returns true if the pipe ran to completion.
 
 =item valrep( $pattern, $value, [$lastvalue, [$firstvalue] )
 
@@ -515,6 +449,8 @@ results in
   |       cmd3 \
             input=stdin \
             output=output_file
+
+=back
 
 =head1 EXAMPLES
 
@@ -571,16 +507,13 @@ To redirect stderr, add the following line,
 
   $pipe->stderr( 'error' );
 
-which results in:
+which results in a dump (equivalent shell command) of :
 
   (       ls \
   |       wc \
   >       line_count \
   ) \
   2>      error
-
-The entire pipe is run as a subshell, to ensure that all of the commands'
-standard error streams go to the same place.
 
 =head1 COPYRIGHT & LICENSE
 
