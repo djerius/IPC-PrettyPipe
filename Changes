@@ -1,5 +1,11 @@
 Revision history for Perl extension PipeC.
 
+1.20  Fri Mar 12 17:23:10 EST 2010
+      - forked from old PipeC module
+      - use IPC::Run to run pipeline instead of shell
+      - remove stderr2stdout and dumprun methods
+      - modernize packaging and tests
+
 1.11  Wed Sep 20 16:37:38 EDT 2006
       - added copyright to source files
 

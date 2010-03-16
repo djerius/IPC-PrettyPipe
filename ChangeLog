@@ -1,120 +1,218 @@
-2006-09-20 16:37 -0400  dj  <dj@macabre.cfa.harvard.edu>  (52788c5648f3 [tip])
+2010-03-12 17:20 -0500  djerius  <djerius@cfa.harvard.edu>  (305dd1bc7027 [tip])
 
-	Tag: 1.11
+	* t/00-load.t, t/perlcritic.t, t/pod-coverage.t, t/pod.t, t/run.t: new
+	file.
+	* t/PipeC.t, t/test.pl: deleted file.
+	* Makefile.PL, lib/IPC/PipeC.pm, lib/IPC/PipeC/Cmd.pm, t/00-load.t,
+	t/PipeC.t, t/perlcritic.t, t/pod-coverage.t, t/pod.t, t/run.t,
+	t/test.pl:
+	modernized tests, use IPC::Run instead of the shell to run the
+	pipeline
+
+2010-03-11 17:44 -0500  djerius  <djerius@cfa.harvard.edu>  (75a1b0f85bac)
+
+	* lib/IPC/PipeC.pm, lib/IPC/PipeC/Cmd.pm: new file.
+	* GNUmakefile.local, MANIFEST, lib/PipeC.pm, lib/PipeC/Cmd.pm: deleted
+	file.
+	* GNUmakefile.local, MANIFEST, Makefile.PL, README, lib/IPC/PipeC.pm,
+	lib/IPC/PipeC/Cmd.pm, lib/PipeC.pm, lib/PipeC/Cmd.pm, t/PipeC.t:
+	rename to IPC::PipeC. use Module::Install
+
+2006-09-20 16:39 -0400  dj  <dj@macabre.cfa.harvard.edu>  (a415e00e5f50)
+
+	* .hgtags:
+	Added tag 1.11 for changeset
+	a0f84d3681b3d08b4e146e134c6781389e66fc9f
+
+2006-09-20 16:38 -0400  dj  <dj@macabre.cfa.harvard.edu>  (a0f84d3681b3 [1.11])
+
+	* ChangeLog, Changes, lib/PipeC.pm:
+	bump version, update changelog for release
+
+2006-09-20 16:37 -0400  dj  <dj@macabre.cfa.harvard.edu>  (52788c5648f3)
+
 	* README, lib/PipeC.pm, lib/PipeC/Cmd.pm:
 	added license/copyright info
 
-2006-09-19  Diab Jerius  <djerius@cfa.harvard.edu>
+2006-09-19 16:51 -0400  dj  <dj@macabre.cfa.harvard.edu>  (67d68057773b)
 
-	Tag: 1.10
+	* .hgtags:
+	Added tag 1.10 for changeset
+	88340895b7c9084e89821eb8d6b41c1d1b8a1c86
+
+2006-09-19 16:51 -0400  dj  <dj@macabre.cfa.harvard.edu>  (88340895b7c9 [1.10])
+
+	* ChangeLog, Changes:
+	updated for release
+
+2006-09-19 16:02 -0400  dj  <dj@macabre.cfa.harvard.edu>  (3c23a6c98758)
 
 	* lib/PipeC.pm, lib/PipeC/Cmd.pm:
 	updated error messages to use __PACKAGE__
-	[3c23a6c98758] [tip]
 
+2006-09-19 15:40 -0400  dj  <dj@macabre.cfa.harvard.edu>  (53df7a73c321)
+
+	* lib/PipeC.pm, lib/PipeC/Cmd.pm, t/PipeC.t, t/test.pl: new file.
+	* PipeC.pm, test.pl: deleted file.
 	* MANIFEST, MANIFEST.SKIP, Makefile.PL, PipeC.pm, lib/PipeC.pm,
 	lib/PipeC/Cmd.pm, t/PipeC.t, t/test.pl, test.pl:
 	modernified the package layout; split PipeC::Cmd out of PipeC.pm.
 	updated docs.
-	[53df7a73c321]
 
-2004-10-18 19:35  tag V1_09
+2006-09-19 15:55 +0000  dj  <dj>  (74262bb7a053)
 
-2004-10-18 19:35  gaetz
+	* ChangeLog: new file.
+	* ChangeLog:
+	added ChangeLog
 
-	* Changes, GNUmakefile, GNUmakefile.local, PipeC.pm: [no log
-	  message]
+2006-09-19 11:56 -0400  dj  <dj@macabre.cfa.harvard.edu>  (afd3df4c5cd3)
 
-2002-11-18 16:22  tag V1_08
+	* .hgtags:
+	Added tag V1_09 for changeset
+	bf95dafb08bba81f2cbfae8bb21d2c7ea2959b0c
 
-2002-11-18 16:22  dj
+2004-10-18 23:35 +0000  gaetz  <gaetz>  (bf95dafb08bb [V1_09])
 
-	* Changes, PipeC.pm: added dumprun
+	* GNUmakefile.local: new file.
+	* GNUmakefile: deleted file.
+	* Changes, GNUmakefile, GNUmakefile.local, PipeC.pm:
+	Empty changelog
 
-2002-04-12 17:19  tag V1_07
+2006-09-19 11:56 -0400  dj  <dj@macabre.cfa.harvard.edu>  (0b49ecb426ab)
 
-2002-04-12 17:19  dj
+	* .hgtags:
+	Added tag V1_08 for changeset
+	eaf9f8563a3c63ff9000997a77f1953cc5999860
 
+2002-11-18 21:22 +0000  dj  <dj>  (eaf9f8563a3c [V1_08])
+
+	* Changes, PipeC.pm:
+	added dumprun
+
+2006-09-19 11:56 -0400  dj  <dj@macabre.cfa.harvard.edu>  (0f1f05c86e8e)
+
+	* .hgtags:
+	Added tag V1_07 for changeset
+	4aded5e5e070b00976a23a42e33106de4ffe51b0
+
+2002-04-12 21:19 +0000  dj  <dj>  (4aded5e5e070 [V1_07])
+
+	* LICENSE, MANIFEST.SKIP, README: new file.
 	* Changes, LICENSE, MANIFEST, MANIFEST.SKIP, PipeC.pm, README,
-	  test.pl: added stderr2stdout()
+	test.pl:
+	added stderr2stdout()
 
-2001-02-01 15:35  tag V1_06
+2006-09-19 11:56 -0400  dj  <dj@macabre.cfa.harvard.edu>  (608a6e1a2723)
 
-2001-02-01 15:35  dj
+	* .hgtags:
+	Added tag V1_06 for changeset
+	78775f597e0a015527c74c894115a22ba80a69c0
 
-	* PipeC.pm, test.pl: cleaned up escaped output to use far less
-	  backslashes
+2001-02-01 20:35 +0000  dj  <dj>  (78775f597e0a [V1_06])
 
-2001-01-30 19:06  tag V1_05
+	* PipeC.pm, test.pl:
+	cleaned up escaped output to use far less backslashes
 
-2001-01-30 19:06  dj
+2006-09-19 11:56 -0400  dj  <dj@macabre.cfa.harvard.edu>  (45773f476635)
 
-	* Changes, PipeC.pm: added <>& to magic characters
+	* .hgtags:
+	Added tag V1_05 for changeset
+	fd999197d1c03743f0cfa9d8dfdc0a710225235f
 
-2000-08-14 18:05  tag V1_04
+2001-01-31 00:06 +0000  dj  <dj>  (fd999197d1c0 [V1_05])
 
-2000-08-14 18:05  dj
+	* Changes, PipeC.pm:
+	added <>& to magic characters
 
-	* Changes: [no log message]
+2006-09-19 11:56 -0400  dj  <dj@macabre.cfa.harvard.edu>  (8a7fddb72111)
 
-2000-08-14 18:04  dj
+	* .hgtags:
+	Added tag V1_04 for changeset
+	a2a639b9d3113355f786c83248a6962a30baca95
 
-	* Changes, GNUmakefile, INSTALL, PipeC.pm, test.pl: fixes to magic
-	  chars, new GNUmakefile, INSTALL
+2000-08-14 22:05 +0000  dj  <dj>  (a2a639b9d311 [V1_04])
 
-2000-03-12 21:41  dj
+	* Changes:
+	Empty changelog
 
-	* PipeC.pm, test.pl: introduced change in behavior with addition of
-	  firstvalue to valrep.
+2000-08-14 22:04 +0000  dj  <dj>  (85702b68a0d5)
 
-	  previously, if only one match was made and lastvalue was
-	  specified, lastvalue would prevail.  the bogus behavior was that
-	  lastvalue was only used if nmatch > 1.  now, if nmatch = 1 and
-	  firstvalue isn't specified, it is set to lastvalue.  this
-	  reestablishes the old behavior.
+	* GNUmakefile: new file.
+	* Changes, GNUmakefile, INSTALL, PipeC.pm, test.pl:
+	fixes to magic chars, new GNUmakefile, INSTALL
 
-2000-03-12 20:32  tag V1_03
+2000-03-13 02:41 +0000  dj  <dj>  (fad6f370009c)
 
-2000-03-12 20:32  dj
+	* PipeC.pm, test.pl:
+	introduced change in behavior with addition of firstvalue to valrep.
 
-	* PipeC.pm, test.pl: add firstvalue to valrep functions
+	previously, if only one match was made and lastvalue was specified,
+	lastvalue would prevail. the bogus behavior was that lastvalue was
+	only used if nmatch > 1. now, if nmatch = 1 and firstvalue isn't
+	specified, it is set to lastvalue. this reestablishes the old
+	behavior.
 
-2000-01-21 09:55  tag V1_02
+2006-09-19 11:56 -0400  dj  <dj@macabre.cfa.harvard.edu>  (c9713f69e105)
 
-2000-01-21 09:55  dj
+	* .hgtags:
+	Added tag V1_03 for changeset
+	d5ca2bdc1c6e58a17f9a76d9e75b7658d343f8f9
 
-	* PipeC.pm: [no log message]
+2000-03-13 01:32 +0000  dj  <dj>  (d5ca2bdc1c6e [V1_03])
 
-2000-01-19 16:57  dj
+	* test.pl: new file.
+	* PipeC.pm, test.pl:
+	add firstvalue to valrep functions
 
-	* Changes, GNUmakefile, INSTALL, MANIFEST, Makefile.PL: [no log
-	  message]
+2006-09-19 11:56 -0400  dj  <dj@macabre.cfa.harvard.edu>  (46c12778f4c3)
 
-1999-04-09 13:49  dj
+	* .hgtags:
+	Added tag V1_02 for changeset
+	90bb541fcf96330d34b215d5129e57e8669ba6df
 
-	* PipeC.pm: handles empty arguments to options in a manner
-	  compatible with the perl parameter library
+2000-01-21 14:55 +0000  dj  <dj>  (90bb541fcf96 [V1_02])
 
-1999-03-24 14:14  dj
+	* PipeC.pm:
+	Empty changelog
 
-	* PipeC.pm: semicolons weren't being recognized as shell
-	  meta-characters
+2000-01-19 21:57 +0000  dj  <dj>  (01f35bbe0f2d)
 
-1999-03-16 16:39  dj
+	* Changes, MANIFEST, Makefile.PL: new file.
+	* GNUmakefile: deleted file.
+	* Changes, GNUmakefile, INSTALL, MANIFEST, Makefile.PL:
+	Empty changelog
 
-	* PipeC.pm: added ability to set attributes in PipeC::add
+1999-04-09 17:49 +0000  dj  <dj>  (97d868593d32)
 
-1999-03-12 14:48  dj
+	* PipeC.pm:
+	handles empty arguments to options in a manner compatible with the
+	perl parameter library
 
-	* PipeC.pm: valrep prematurely gave up on the lastvalue
+1999-03-24 19:14 +0000  dj  <dj>  (498ec56c6ccd)
 
-1999-03-11 12:17  tag initial
+	* PipeC.pm:
+	semicolons weren't being recognized as shell meta-characters
 
-1999-03-11 12:17  dj
+1999-03-16 21:39 +0000  dj  <dj>  (6fefd60d74bb)
 
-	* GNUmakefile, INSTALL, PipeC.pm: Initial revision
+	* PipeC.pm:
+	added ability to set attributes in PipeC::add
 
-1999-03-11 12:17  dj
+1999-03-12 19:48 +0000  dj  <dj>  (cc209be83bce)
 
-	* GNUmakefile, INSTALL, PipeC.pm: [no log message]
+	* PipeC.pm:
+	valrep prematurely gave up on the lastvalue
+
+2006-09-19 11:56 -0400  dj  <dj@macabre.cfa.harvard.edu>  (43020a010586)
+
+	* .hgtags: new file.
+	* .hgtags:
+	Added tag initial for changeset
+	aae8666463f168b260b9e5a079cdab53805dbf97
+
+1999-03-11 17:17 +0000  dj  <dj>  (aae8666463f1 [initial])
+
+	* .hgignore, GNUmakefile, INSTALL, PipeC.pm: new file.
+	* .hgignore, GNUmakefile, INSTALL, PipeC.pm:
+	Initial revision
 
