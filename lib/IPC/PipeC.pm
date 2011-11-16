@@ -29,7 +29,7 @@ use Carp;
 use IPC::Run ();
 use IPC::PipeC::Cmd;
 
-our $VERSION = '1.20_01';
+our $VERSION = '1.21';
 
 sub new
 {

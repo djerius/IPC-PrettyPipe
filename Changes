@@ -1,5 +1,8 @@
 Revision history for Perl extension PipeC.
 
+1.21 Wed Nov 16 17:02:43 EST 2011
+      - added internal debug flag to pass to IPC::Run
+
 1.20  Fri Mar 12 17:23:10 EST 2010
       - forked from old PipeC module
       - use IPC::Run to run pipeline instead of shell

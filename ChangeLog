@@ -1,4 +1,30 @@
-2010-03-12 17:20 -0500  djerius  <djerius@cfa.harvard.edu>  (305dd1bc7027 [tip])
+2011-11-16 17:03 -0500  djerius  <djerius@cfa.harvard.edu>  (e212e15b6770 [tip])
+
+	* lib/IPC/PipeC.pm:
+	added internal debug flag to pass to IPC::Run
+
+2010-03-16 11:31 -0400  djerius  <djerius@cfa.harvard.edu>  (ad2b47dd69df)
+
+	* .hgtags:
+	Added tag 1.20 for changeset 4c3b7f6e0259
+
+2010-03-16 11:27 -0400  djerius  <djerius@cfa.harvard.edu>  (4c3b7f6e0259 [1.20])
+
+	* ChangeLog, Changes, lib/IPC/PipeC.pm:
+	update logs and version for release
+
+2010-03-12 17:25 -0500  djerius  <djerius@cfa.harvard.edu>  (61febe7fb126)
+
+	* INSTALL: deleted file.
+	* INSTALL:
+	remove old cruft
+
+2010-03-12 17:25 -0500  djerius  <djerius@cfa.harvard.edu>  (70c698382de5)
+
+	* LICENSE:
+	update to GPL v3
+
+2010-03-12 17:20 -0500  djerius  <djerius@cfa.harvard.edu>  (305dd1bc7027)
 
 	* t/00-load.t, t/perlcritic.t, t/pod-coverage.t, t/pod.t, t/run.t: new
 	file.
