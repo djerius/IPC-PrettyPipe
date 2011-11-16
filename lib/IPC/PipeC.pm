@@ -29,7 +29,7 @@ use Carp;
 use IPC::Run ();
 use IPC::PipeC::Cmd;
 
-our $VERSION = '1.20';
+our $VERSION = '1.20_01';
 
 sub new
 {
@@ -41,6 +41,7 @@ sub new
               cmd => [ ],
 	      stdout => undef,
 	      stderr => undef,
+	      debug => 0,
              };
 
   bless $self, $class;
@@ -192,7 +193,7 @@ sub run
     if defined $self->{stdout};
 
 
-  return IPC::Run::run( @harness )
+  return IPC::Run::run( @harness, debug => $self->{debug} )
 }
 
 sub valrep
