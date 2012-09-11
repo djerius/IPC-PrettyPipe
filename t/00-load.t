@@ -3,7 +3,7 @@
 use Test::More tests => 1;
 
 BEGIN {
-  use_ok('IPC::PipeC');
+  use_ok('IPC::PrettyPipe');
 }
 
-diag( "Testing IPC::PipeC $IPC::PipeC::VERSION, Perl $], $^X" );
+diag( "Testing IPC::PrettyPipe $IPC::PrettyPipe::VERSION, Perl $], $^X" );

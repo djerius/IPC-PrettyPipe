@@ -2,9 +2,9 @@
 #
 # Copyright (C) 2010 Smithsonian Astrophysical Observatory
 #
-# This file is part of IPC::PipeC
+# This file is part of IPC::PrettyPipe
 #
-# IPC::PipeC is free software: you can redistribute it and/or modify
+# IPC::PrettyPipe is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or (at
 # your option) any later version.
@@ -19,7 +19,7 @@
 #
 # -->8-->8-->8-->8--
 
-package IPC::PipeC::Cmd;
+package IPC::PrettyPipe::Cmd;
 
 use strict;
 use warnings;
@@ -118,7 +118,7 @@ sub add
     else
     {
       $self->_error( __PACKAGE__,
-		     "::add: unacceptable argument to IPC::PipeC::Cmd::add\n" );
+		     "::add: unacceptable argument to IPC::PrettyPipe::Cmd::add\n" );
       return;
     }
   }
@@ -289,13 +289,13 @@ __END__
 
 =head1 NAME
 
-IPC::PipeC::Cmd - manage command pipe commands
+IPC::PrettyPipe::Cmd - manage command pipe commands
 
 =head1 SYNOPSIS
 
-  use IPC::PipeC;
+  use IPC::PrettyPipe;
 
-  my $pipe = new IPC::PipeC;
+  my $pipe = new IPC::PrettyPipe;
 
   $pipe->argsep( ' ' );
 
@@ -312,21 +312,21 @@ IPC::PipeC::Cmd - manage command pipe commands
 
 =head1 DESCRIPTION
 
-B<IPC::PipeC::Cmd> objects are containers for the individual commands in a
-pipeline created by B<IPC::PipeC>.
+B<IPC::PrettyPipe::Cmd> objects are containers for the individual commands in a
+pipeline created by B<IPC::PrettyPipe>.
 
 =head1 METHODS
 
-B<IPC::PipeC::Cmd> objects have a class constructor, but it is rarely used.
-Instead, use the parent B<IPC::PipeC> object's B<add()> method.
+B<IPC::PrettyPipe::Cmd> objects have a class constructor, but it is rarely used.
+Instead, use the parent B<IPC::PrettyPipe> object's B<add()> method.
 
 =over 8
 
 =item new
 
-  $obj = IPC::PipeC::Cmd->new( \%attr );
+  $obj = IPC::PrettyPipe::Cmd->new( \%attr );
 
-Create a B<IPC::PipeC::Cmd> object. The optional attribute hash
+Create a B<IPC::PrettyPipe::Cmd> object. The optional attribute hash
 may contain the following keys:
 
 =over 8
@@ -368,7 +368,7 @@ If true, throws exceptions upon error. This defaults to C<0>.
 =item add( @arguments )
 
 This method adds additional arguments to the command.  The format of
-the arguments is the same as to the B<IPC::PipeC::add> method.  This is useful
+the arguments is the same as to the B<IPC::PrettyPipe::add> method.  This is useful
 if some arguments should be conditionally given, e.g.
 
 	$cmd = $pipe->add( 'ls' );

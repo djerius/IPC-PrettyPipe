@@ -1,4 +1,13 @@
-Revision history for Perl extension PipeC.
+Revision history for Perl extension IPC::PrettyPipe
+
+1.00     Mon Sep 10 11:36:14 EDT 2012
+
+      - forked from IPC::PipeC
+
+
+
+
+# Previous history from IPC::PipeC
 
 1.21 Wed Nov 16 17:02:43 EST 2011
       - added internal debug flag to pass to IPC::Run
@@ -28,7 +37,7 @@ Revision history for Perl extension PipeC.
       - added <>& to magic characters
 
 1.04  Mon Aug 14 18:03:17 EDT 2000
-       - added ()[] to magic characters. 
+       - added ()[] to magic characters.
        - _shell_escape wasn't quite doing the right trick when [] was
          added, so explicitly clean up magic characters
 

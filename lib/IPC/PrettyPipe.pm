@@ -2,9 +2,9 @@
 #
 # Copyright (C) 2010 Smithsonian Astrophysical Observatory
 #
-# This file is part of IPC::PipeC
+# This file is part of IPC::PrettyPipe
 #
-# IPC::PipeC is free software: you can redistribute it and/or modify
+# IPC::PrettyPipe is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or (at
 # your option) any later version.
@@ -19,7 +19,7 @@
 #
 # -->8-->8-->8-->8--
 
-package IPC::PipeC;
+package IPC::PrettyPipe;
 
 use strict;
 use warnings;
@@ -27,7 +27,7 @@ use warnings;
 use Carp;
 
 use IPC::Run ();
-use IPC::PipeC::Cmd;
+use IPC::PrettyPipe::Cmd;
 
 our $VERSION = '1.21';
 
@@ -80,7 +80,7 @@ sub add
 {
   my $self = shift;
 
-  my $cmd = IPC::PipeC::Cmd->new( @_ );
+  my $cmd = IPC::PrettyPipe::Cmd->new( @_ );
 
   if ( $cmd )
   {
@@ -261,13 +261,13 @@ __END__
 
 =head1 NAME
 
-IPC::PipeC - manage command pipes
+IPC::PrettyPipe - manage command pipes
 
 =head1 SYNOPSIS
 
-  use IPC::PipeC;
+  use IPC::PrettyPipe;
 
-  my $pipe = new IPC::PipeC;
+  my $pipe = new IPC::PrettyPipe;
 
   $pipe->argsep( ' ' );
 
@@ -290,15 +290,15 @@ IPC::PipeC - manage command pipes
 
 =head1 DESCRIPTION
 
-B<IPC::PipeC> provides a mechanism to maintain readable execution
-pipelines.  Pipelines are created by adding commands to a B<IPC::PipeC>
+B<IPC::PrettyPipe> provides a mechanism to maintain readable execution
+pipelines.  Pipelines are created by adding commands to a B<IPC::PrettyPipe>
 object.  Options to the commands are set using a readable format;
-B<IPC::PipeC> takes care of quoting strings, sticking equal signs in, etc.
+B<IPC::PrettyPipe> takes care of quoting strings, sticking equal signs in, etc.
 The pipeline may be rendered into a nicely formatted string, as well
 as being executed (currently by the Bourne shell, B</bin/sh>).
 
-B<IPC::PipeC> actually manages a list of B<IPC::PipeC::Cmd> objects.  See
-L<IPC::PipeC::Cmd> for more information.
+B<IPC::PrettyPipe> actually manages a list of B<IPC::PrettyPipe::Cmd> objects.  See
+L<IPC::PrettyPipe::Cmd> for more information.
 
 
 =head1 METHODS
@@ -307,7 +307,7 @@ L<IPC::PipeC::Cmd> for more information.
 
 =item new( [\%attr] )
 
-B<new> creates a new C<IPC::PipeC> object with the optionally specified
+B<new> creates a new C<IPC::PrettyPipe> object with the optionally specified
 attributes.  The attributes are specified via a hash, which may have
 the following keys:
 
@@ -322,7 +322,7 @@ use a space.
 
 New commands inherit the current value of the B<ArgSep> string.  The
 default value may also be changed with the B<argsep> method for
-B<IPC::PipeC> objects.  The separator for a given command may be
+B<IPC::PrettyPipe> objects.  The separator for a given command may be
 changed with the B<argsep> method for the command.
 
 
@@ -330,11 +330,11 @@ changed with the B<argsep> method for the command.
 
 =item add( [\%attr,] $command, @arguments )
 
-This creates an B<IPC::PipeC::Cmd> object, adds it to the
-B<IPC::PipeC> object, and returns a handle to it.  The optional hash
+This creates an B<IPC::PrettyPipe::Cmd> object, adds it to the
+B<IPC::PrettyPipe> object, and returns a handle to it.  The optional hash
 may be used to set attributes for the command (see
-L<IPC::PipeC::Cmd>).  The command's B<ArgSep> attribute is set to that
-of the B<IPC::PipeC> object.
+L<IPC::PrettyPipe::Cmd>).  The command's B<ArgSep> attribute is set to that
+of the B<IPC::PrettyPipe> object.
 
 Arguments to the command may be specified in one of the following
 ways:
@@ -386,7 +386,7 @@ The different methods of option specification may be mixed, e.g.,
 
 This changes the value of the B<ArgSep> attribute for commands
 subsequently added to the pipe. Existing commands should use the
-B<IPC::PipeC::Cmd::argsep> method.
+B<IPC::PrettyPipe::Cmd::argsep> method.
 
 =item stdin( $stdin )
 
@@ -413,7 +413,7 @@ cancels any value previously set.
 This method returns a string containing the sequence of commands in
 the pipe. By default, this is a "pretty" representation.  The
 I<\%attr> hash may contain any of the attributes documented
-for the B<IPC::PipeC::Cmd::new> method.
+for the B<IPC::PrettyPipe::Cmd::new> method.
 
 
 =item run
@@ -430,7 +430,7 @@ argument will be replaced with I<$firstvalue>.
 
 For example,
 
-  my $pipe = new IPC::PipeC;
+  my $pipe = new IPC::PrettyPipe;
   $pipe->add( 'cmd1', [ input => 'INPUT', output => 'OUTPUT' ] );
   $pipe->add( 'cmd2', [ input => 'INPUT', output => 'OUTPUT' ] );
   $pipe->add( 'cmd3', [ input => 'INPUT', output => 'OUTPUT' ] );
@@ -462,7 +462,7 @@ end. In the following example the programs recognize the token
 C<stdout> to refer to the standard output stream; this is specific to
 their implementation.
 
-  my $pipe = new IPC::PipeC;
+  my $pipe = new IPC::PrettyPipe;
   $pipe->add( 'genphot',
   	    { output	=> 'OUTPUT',
   	      photdens  => 0.001 }
@@ -491,7 +491,7 @@ This results in:
 If programs can write to C<stdout> directly, one can use the B<stdout()>
 (and likewise B<stderr()> method), if need be:
 
-  my $pipe = new IPC::PipeC;
+  my $pipe = new IPC::PrettyPipe;
   $pipe->add( 'ls' );
   $pipe->add( 'wc' );
   $pipe->stdout( 'line_count' );

@@ -6,13 +6,13 @@ use warnings;
 use Test::More tests => 3;
 
 BEGIN {
-  use_ok('IPC::PipeC');
+  use_ok('IPC::PrettyPipe');
 }
 
 eval {
     my $stdout;
     my $stderr;
-    my $pipe = IPC::PipeC->new;
+    my $pipe = IPC::PrettyPipe->new;
 
     $pipe->add( $^X, -le => 'for (0..10) { print $_;  print STDERR "cmd1: $_"; }' );
     $pipe->add( $^X, -nle => '$_ = 10 - $_; print $_ ; print STDERR "cmd2: $_"' );
