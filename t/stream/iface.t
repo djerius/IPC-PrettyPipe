@@ -13,7 +13,7 @@ sub new { IPC::PrettyPipe::Stream->new( @_ ) }
 
 lives_and {
 
-    is( new( '>' )->op, '>' )
+    is( new( '2>&3' )->op, '2>&3' )
 
 } 'just an op';
 
@@ -32,5 +32,17 @@ throws_ok {
     new( '>>>' );
 
 } qr/cannot parse/, "bad operator";
+
+throws_ok {
+
+	new( '>' );
+
+} qr/requires a file/, '> no file';
+
+throws_ok {
+
+	new( '<' );
+
+} qr/requires a file/, '< no file';
 
 done_testing;

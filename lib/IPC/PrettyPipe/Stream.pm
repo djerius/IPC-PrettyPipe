@@ -101,6 +101,9 @@ sub BUILD {
     $self->${\"_set_$_"}($opc->{$_})
       for grep { exists $opc->{$_} } qw[ N M Op ];
 
+    croak( __PACKAGE__, ': ', "stream operator ", $self->op, "requires a file\n" )
+      if $opc->{param} && ! $self->has_file;
+
     return;
 }
 
@@ -128,7 +131,7 @@ sub parse_op {
        )
 
     # >&, &>
-    | (?:
+    | (?'stdout_stderr'
           (?'Op' >& | &> )
       )
 
@@ -155,6 +158,11 @@ sub parse_op {
     # fill in default value for N & M for stdin & stdout
     $opc->{N} = substr($opc->{Op},0,1) eq '<' ? 0 : 1
       if exists $opc->{first} && ! defined $opc->{N};
+
+    $opc->{param}++
+      if $opc->{first} || $opc->{'stdout_stderr'};
+
+    delete $opc->{first};
 
     return $opc;
 }
