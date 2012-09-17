@@ -5,3 +5,4 @@
 ^project.state$
 ^project.state.old$
 ^project.state.journal$
+^blib/
