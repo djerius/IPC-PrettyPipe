@@ -81,4 +81,21 @@ lives_ok {
 }
 'add cmd+args';
 
+lives_ok {
+
+    my $pipe = new();
+    $pipe->add( IPC::PrettyPipe::Cmd->new( 'make', [ '-f', 'Makefile' ], '-k' ) );
+
+    is ( $pipe->cmds->[0]->cmd, 'make' );
+    is ( $pipe->cmds->[0]->args->[0]->name, '-f' );
+    is ( $pipe->cmds->[0]->args->[0]->value, 'Makefile' );
+    is ( $pipe->cmds->[0]->args->[1]->name, '-k' );
+
+    $pipe->add( 'ls', '-l' );
+    is ( $pipe->cmds->[1]->cmd, 'ls' );
+    is ( $pipe->cmds->[1]->args->[0]->name, '-l' );
+
+}
+'add Cmd object';
+
 done_testing;

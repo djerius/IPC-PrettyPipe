@@ -164,9 +164,16 @@ sub add {
 
 sub _add {
 
-	my ( $self, $cmds, $cmd ) = ( shift, shift, shift );
+	my ( $self, $cmds ) = ( shift, shift );
+
+	my ( $cmd, @args ) = 'ARRAY' eq ref $_[0]
+	                   ? @{ $_[0] }
+	                   : @_;
 
 	if ( $cmd->$_isa( 'IPC::PrettyPipe::Cmd' ) ) {
+
+		croak( "cannot specify additional arguments when passing a Cmd object\n" )
+		  if @args;
 
 		push @$cmds, $cmd;
 
@@ -174,9 +181,7 @@ sub _add {
 
 	else {
 
-		my ( $exec, @args ) = @{$cmd};
-
-		my %args = ( cmd => $exec,
+		my %args = ( cmd => $cmd,
 		             args => \@args );
 
 		$args{argsep} = $self->argsep if $self->has_argsep;
