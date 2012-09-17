@@ -1,6 +1,6 @@
 # --8<--8<--8<--8<--
 #
-# Copyright (C) 2010 Smithsonian Astrophysical Observatory
+# Copyright (C) 2012 Smithsonian Astrophysical Observatory
 #
 # This file is part of IPC::PrettyPipe
 #
@@ -26,242 +26,308 @@ use warnings;
 
 use Carp;
 
-use IPC::Run ();
+use String::ShellQuote qw[ shell_quote ];
+use List::Util qw[ sum ];
+use Safe::Isa;
+
+use Params::Check qw[ check ];
+
+use Moo;
+use MooX::Types::MooseLike::Base ':all';
+
 use IPC::PrettyPipe::Cmd;
+use IPC::PrettyPipe::Check;
 
 our $VERSION = '1.21';
 
-sub new
-{
-  my $this = shift;
-  my $class = ref($this) || $this;
+has argpfx => (
+    is      => 'rw',
+    predicate => 1,
+    default => sub { '' },
+);
 
-  my $self = {
-              attr => { ArgSep => undef },
-              cmd => [ ],
-	      stdout => undef,
-	      stderr => undef,
-	      debug => 0,
-             };
+has argsep => (
+    is      => 'rw',
+    isa     => ArgSep,
+    predicate => 1,
+    default => sub { undef },
+);
 
-  bless $self, $class;
+has cmdsep => (
+    is      => 'rw',
+    isa     => Str,
+    default => sub { " \\\n" },
+);
 
-  while ( @_ )
-  {
-    my $arg = shift;
 
-    # hash of attributes
-    if ( ref( $arg ) eq 'HASH' )
-    {
-      while ( my ( $key, $val ) = each ( %$arg ) )
-      {
-        if ( exists $self->{attr}->{$key} )
-        {
-          $self->{attr}->{$key} = $val;
-        }
-        else
-        {
-          $self->_error( __PACKAGE__, "::new: unknown attribute: $key\n" );
-          return;
-        }
-      }
+has cmdpfx => (
+    is      => 'rw',
+    isa     => Str,
+    default => sub { "\t" },
+);
+
+has cmdoptsep => (
+    is      => 'rw',
+    isa     => Str,
+    default => sub { " \\\n" },
+);
+
+has optsep => (
+    is      => 'rw',
+    isa     => Str,
+    default => sub { " \\\n" },
+);
+
+has optpfx => (
+    is      => 'rw',
+    isa     => Str,
+    default => sub { "\t  " },
+);
+
+
+has stream => (
+    is => 'rw',
+    isa => ArrayRef[InstanceOf['IPC::PrettyPipe::Stream']],
+    default => sub { [] }
+);
+
+
+has _cmds => (
+    is       => 'ro',
+    init_arg => 'cmds',
+    coerce   => sub { 'ARRAY' ne ref $_[0] ? [ $_[0] ] : $_[0] },
+    isa      => sub {
+        die( "args must be a scalar or list\n" )
+          unless 'ARRAY' eq ref( $_[0] );
+    },
+    default => sub { [] },
+    clearer => 1,
+);
+
+# must delay building cmds until all attributes have been specified
+has cmds => (
+    is       => 'lazy',
+    init_arg => undef
+);
+
+sub BUILDARGS {
+
+	my $class = shift;
+
+    return $_[0] if 1 == @_ && 'HASH' eq ref $_[0];
+
+	my @cmds;
+
+	while( @_ ) {
+
+		last
+		  unless $_[0]->$_isa( 'IPC::PrettyPipe::Cmd' )
+		    || 'ARRAY' eq ref $_[0];
+
+		push @cmds, shift;
+
+	}
+
+
+	my %args = @_;
+
+	$args{cmds} = \@cmds
+	  if @cmds;
+
+	return \%args;
+}
+
+sub _build_cmds {
+
+    my $self = shift;
+
+    my $cmds = [];
+
+    $self->_add( $cmds, $_ ) foreach @{ $self->_cmds };
+
+    $self->_clear_cmds;
+
+    return $cmds;
+}
+
+sub add {
+
+    my $self = shift;
+
+    croak( __PACKAGE__, ": must specify at least the command name\n" )
+      unless @_;
+
+	return $self->_add( $self->cmds, \@_ );
+
+}
+
+
+sub _add {
+
+	my ( $self, $cmds, $cmd ) = ( shift, shift, shift );
+
+	if ( $cmd->$_isa( 'IPC::PrettyPipe::Cmd' ) ) {
+
+		push @$cmds, $cmd;
+
+	}
+
+	else {
+
+		my ( $exec, @args ) = @{$cmd};
+
+		my %args = ( cmd => $exec,
+		             args => \@args );
+
+		$args{argsep} = $self->argsep if $self->has_argsep;
+		$args{argpfx} = $self->argpfx if $self->has_argpfx;
+
+		push @$cmds, IPC::PrettyPipe::Cmd->new( \%args );
+	}
+
+	return $cmd;
+}
+
+sub render {
+
+	my $self = shift;
+
+    my $args = check( {
+            argsep  => { allow => CheckArgSep },
+            argdefsep  => { allow => CheckArgSep },
+            flatten => { allow => CheckBool, default => 0 },
+            quote   => { allow => CheckBool, default => 0 },
+        },
+        ( 'HASH' eq ref $_[0] ? $_[0] : {@_} )
+    ) or croak( __PACKAGE__, ': ', Params::Check::last_error );
+
+	$args->{sep} = delete $args->{argsep} if exists $args->{argsep};
+	$args->{defsep} = delete $args->{argdefsep} if exists $args->{argdefsep};
+
+	my @cmds = map { [ $_->render( $args  ) ] } @{ $self->cmds };
+
+	return @cmds;
+}
+
+sub _pp_cmd {
+
+    my ( $self, $pcmd ) = @_;
+
+    # render the command so that each name/value pair is rendered
+    # as a single string
+    my @args = $pcmd->render( quote => 1, defsep => ' ' );
+
+    return
+      join( $self->cmdoptsep . $self->optpfx,
+            $self->cmdpfx . shift( @args),
+            join( $self->optsep . $self->optpfx, @args ),
+          );
+}
+
+sub pp {
+
+    my $self = shift;
+
+    my $pipe = join( $self->cmdsep . '|',
+                     map { $self->_pp_cmd( $_ ) } @{ $self->cmds } );
+
+
+
+    if ( $self->has_stderr || $self->has_stdin || $self->has_stdout ) {
+
+	    my @pipe = ( '(', $pipe , $self->cmdsep, ')' );
+
+	    push @pipe, $self->cmdsep, '<', $self->cmdpfx, $self->stdin
+	      if $self->has_stdin;
+
+	    push @pipe, $self->cmdsep, '>', $self->cmdpfx, $self->stdout
+	      if $self->has_stdout;
+
+	    if ( $self->has_stderr ) {
+
+		    if ( $self->has_stdout && $self->stderr eq $self->stdout ) {
+
+			    push @pipe, $self->cmdsep, $self->cmdpfx, '2>&1';
+
+		    }
+		    else {
+
+			    push @pipe, $self->cmdsep, '2>', $self->cmdpfx, shell_quote( $self->stderr );
+
+		    }
+	    }
+
+	    $pipe = join('', @pipe);
+
     }
-    else
-    {
-      $self->_error( __PACKAGE__, "::new: unacceptable argument\n" );
-      return;
+
+
+    return $pipe;
+
+}
+
+sub valmatch {
+
+    my $self    = shift;
+    my $pattern = shift;
+
+    return sum 0, map { $_->valmatch( $pattern ) && 1 || 0 } @{ $self->cmds };
+}
+
+
+sub valsubst {
+
+    my ( $self, $pattern, $value ) = ( shift, shift, shift );
+
+    my %args = ( ref $_[0] ? %{ $_[0] } : @_ );
+    $args{pattern} = $pattern;
+    $args{value}   = $value;
+
+    ## no critic (ProhibitAccessOfPrivateData)
+
+    my $args = check( {
+            pattern    => { required => 1, allow => CheckRegexp },
+            value      => { required => 1, allow => CheckStr },
+            lastvalue  => { allow    => CheckStr },
+            firstvalue => { allow    => CheckStr },
+        },
+        \%args
+    ) or croak( __PACKAGE__, ': ', Params::Check::last_error );
+
+    my $nmatch = $self->valmatch( $pattern );
+
+    if ( $nmatch == 1 ) {
+
+        $args->{lastvalue} //= $args->{firstvalue} // $args->{value};
+        $args->{firstvalue} //= $args->{lastvalue};
+
     }
-  }
-
-  return $self;
-}
-
-sub add
-{
-  my $self = shift;
-
-  my $cmd = IPC::PrettyPipe::Cmd->new( @_ );
-
-  if ( $cmd )
-  {
-    push @{$self->{cmd}}, $cmd;
-    $cmd->argsep( $self->{attr}{ArgSep} );
-  }
-
-  $cmd;
-}
-
-
-sub argsep
-{
-  my $self = shift;
-
-  @_ || $self->_error( __PACKAGE__, "::argsep: missing argument to argsep\n" );
-
-  $self->{attr}->{ArgSep} = shift;
-
-}
-
-sub stdin
-{
-  my $self = shift;
-  $self->{stdin} = shift;
-}
-
-sub stdout
-{
-  my $self = shift;
-  $self->{stdout} = shift;
-}
-
-sub stderr
-{
-  my $self = shift;
-  $self->{stderr} = shift;
-}
-
-
-sub dump
-{
-  my $self = shift;
-  my $attr = shift;
-
-  my %attr = ( CmdSep => " \\\n",
-	       CmdPfx => "\t",
-	       $attr ? %$attr : () );
-
-  my $pipe = join ( $attr{CmdSep} . '|',
-		    map { $_->dump( $attr) } @{$self->{cmd}} );
-
-
-  if ( $self->{stderr} || $self->{stdin} || $self->{stdout} )
-  {
-    $pipe = '(' . $pipe . $attr{CmdSep} . ')';
-  }
-
-  $pipe .= $attr{CmdSep} . '<' . $attr{CmdPfx} . $self->{stdin}
-    if $self->{stdin};
-
-  $pipe .= $attr{CmdSep} . '>' . $attr{CmdPfx} . $self->{stdout}
-    if $self->{stdout};
-
-  if ( $self->{stderr} )
-  {
-    if ( $self->{stdout} && $self->{stderr} eq $self->{stdout} )
-    {
-      $pipe .= $attr{CmdSep} . $attr{CmdPfx} . '2>&1';
+    else {
+        $args->{lastvalue}  ||= $args->{value};
+        $args->{firstvalue} ||= $args->{value};
     }
-    else
-    {
-      $pipe .= $attr{CmdSep} . '2>' . $attr{CmdPfx} . $self->{stderr};
+
+    my $match = 0;
+    foreach ( @{ $self->cmds } ) {
+        $match++
+          if $_->valsubst( $pattern,
+              $match == 0               ? $args->{firstvalue}
+            : $match == ( $nmatch - 1 ) ? $args->{lastvalue}
+            :                             $args->{value} );
     }
-  }
 
-  $pipe;
+    return $match;
 }
 
 
-sub run
-{
-  my $self = shift;
+1;
 
-  # create list of commands in form appropriate for IPC::Run
-  my @cmds = map { $_->render } @{$self->{cmd}};
-
-  # now create harness.  this will include any redirections as well
-  # as the pipe directives
-  my @harness;
-
-  # start harness off with first command
-  push @harness, shift @cmds;
-
-  # insert stdin redirection if requested.
-  push @harness, '<', $self->{stdin}
-    if defined $self->{stdin};
-
-  # handle redirection of stderr.  this is done on a per process basis
-  # to avoid any close-on-exec problems.  i don't know of any problems,
-  # but why not avoid them?
-
-  my @stderr = defined $self->{stderr} ? ( '2>>', $self->{stderr} ) : ();
-
-  # add rest of commands
-  push @harness, map { ('|', $_, @stderr) } @cmds;
-
-  # insert stdout redirection if requested.
-  push @harness, '>', $self->{stdout}
-    if defined $self->{stdout};
-
-
-  return IPC::Run::run( @harness, debug => $self->{debug} )
-}
-
-sub valrep
-{
-  my $self = shift;
-
-  $self->_error( __PACKAGE__, "::valrep: missing argument(s)\n" )
-    unless 2 <= @_;
-
-  my $pattern = shift;
-  my $value = shift;
-  my $lastvalue = shift;
-  my $firstvalue = shift;
-
-  my $match = 0;
-  my $nmatch = $self->_valmatch( $pattern );
-
-  # if there's only one match and firstvalue isn't set,
-  # need to do something special so that lastvalue
-  # will get used
-
-  $firstvalue ||= $lastvalue if $nmatch == 1;
-  $lastvalue  ||= $value;
-  $firstvalue ||= $value;
-
-
-  foreach ( @{$self->{cmd}} )
-  {
-    $match ++ if $_->valrep( $pattern,
-			  $match == 0             ? $firstvalue :
-			  $match == ($nmatch - 1) ? $lastvalue :
-			                            $value
-			);
-  }
-}
-
-sub _valmatch
-{
-  my $self = shift;
-  my $pattern = shift;
-
-  my $match = 0;
-  foreach ( @{$self->{cmd}} )
-  {
-    $match++ if $_->_valmatch($pattern);
-  }
-  $match;
-}
-
-sub _error
-{
-  my $self = shift;
-
-  if ( $self->{attr}->{RaiseError} )
-  {
-    die @_;
-  }
-  else
-  {
-    carp @_;
-  }
-}
 
 __END__
 
 =head1 NAME
 
-IPC::PrettyPipe - manage command pipes
+IPC::PrettyPipe - manage human readable external command execution pipelines
 
 =head1 SYNOPSIS
 
@@ -269,58 +335,68 @@ IPC::PrettyPipe - manage command pipes
 
   my $pipe = new IPC::PrettyPipe;
 
-  $pipe->argsep( ' ' );
-
-  $pipe->add( $command, $arg1, $arg2 );
+  $pipe->add( $command, @args );
   $pipe->add( $command, $arg1, { option => value } );
-  my $cmd = $pipe->add( $command, $arg1,
-                     [ option1 => value1, option2 => value2] );
 
-  $cmd->add( $arg1, $args, { option => value },
-		  [option => value, option => value ] )
+  $cmd = $pipe->add( $command );
+  $cmd->add( $args );
 
   $cmd->argsep( '=' );
 
-  warn $pipe->dump, "\n";
-
-  $cmd_to_be_run = $pipe->dumprun;
-
-  $pipe->run;
-
-
 =head1 DESCRIPTION
 
-B<IPC::PrettyPipe> provides a mechanism to maintain readable execution
-pipelines.  Pipelines are created by adding commands to a B<IPC::PrettyPipe>
-object.  Options to the commands are set using a readable format;
-B<IPC::PrettyPipe> takes care of quoting strings, sticking equal signs in, etc.
-The pipeline may be rendered into a nicely formatted string, as well
-as being executed (currently by the Bourne shell, B</bin/sh>).
+Connecting a series of programs via pipes is a time honored tradition.
+When it comes to displaying them for debug or informational purposes,
+simple dumps may suffice for simple pipelines, but when the number of
+programs and arguments grows large, it can become difficult to understand
+the overall structure of the pipeline.
 
-B<IPC::PrettyPipe> actually manages a list of B<IPC::PrettyPipe::Cmd> objects.  See
-L<IPC::PrettyPipe::Cmd> for more information.
+B<IPC::PrettyPipe> provides a mechanism to construct and output
+readable external command execution pipelines.  It does this by
+treating commands, their options, and the options' values as separate
+entitites so that it can produce nicely formatted output.
 
+There is sufficient DWIMmery to make it easy to produce pipelines.
+
+=head2 How it works
+
+B<IPC::PrettyPipe> manages a list of B<IPC::PrettyPipe::Cmd> objects,
+each of which also manages a list of B<IPC::PrettyPipe::Arg> objects.
+
+It is rare that one needs worry about anything but the top-level
+B<IPC::PrettyPipe> object, but access to the sub-level objects is easy
+to get.
 
 =head1 METHODS
 
-=over 8
+=over
 
-=item new( [\%attr] )
+=item new
 
-B<new> creates a new C<IPC::PrettyPipe> object with the optionally specified
-attributes.  The attributes are specified via a hash, which may have
-the following keys:
+  # create an empty pipeline
+  $pipe = IPC::PrettyPipe->new( %options );
 
-=over 8
+  # positional argument interface; pass in some commands and options
+  $pipe = IPC::PrettyPipe->new( $cmd1, $cmd2, %options );
 
-=item ArgSep
+  # named argument interface
+  $pipe = IPC::PrettyPipe->new( cmds => [ $cmd1, $cmd2 ], %options );
+
+
+B<new> creates a new C<IPC::PrettyPipe> object.  It can create an empty
+pipe, or can be preloaded with commands.
+
+
+=over
+
+=item argsep
 
 This specifies the default string to separate arguments from their
 values.  If this is undefined (the default), the argument name and
 value are passed to the command separately.  The dumped output will
 use a space.
 
-New commands inherit the current value of the B<ArgSep> string.  The
+New commands inherit the current value of B<argsep> string.  The
 default value may also be changed with the B<argsep> method for
 B<IPC::PrettyPipe> objects.  The separator for a given command may be
 changed with the B<argsep> method for the command.
@@ -339,7 +415,7 @@ of the B<IPC::PrettyPipe> object.
 Arguments to the command may be specified in one of the following
 ways:
 
-=over 8
+=over
 
 =item *
 
