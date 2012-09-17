@@ -30,6 +30,10 @@ use Params::Check qw[ check ];
 use IPC::PrettyPipe::Check;
 use String::ShellQuote qw[ shell_quote ];
 
+use parent 'Exporter';
+
+our @EXPORT_OK = qw[ parse_op ];
+
 use Moo;
 use MooX::Types::MooseLike::Base ':all';
 
@@ -89,7 +93,7 @@ sub BUILD {
 
     my $self = shift;
 
-    my $opc = _parse_op( $self->op );
+    my $opc = parse_op( $self->op );
 
     croak( __PACKAGE__, ': ', "cannot parse stream operator: ", $self->op )
       unless keys %$opc;
@@ -100,7 +104,7 @@ sub BUILD {
     return;
 }
 
-sub _parse_op {
+sub parse_op {
 
     my $op = shift;
 
@@ -365,6 +369,25 @@ These return true if the stream operator contained the associated component.
 
 =back
 
+=head1 FUNCTIONS
+
+B<IPC::PrettyPipe::Stream> exports the following functions upon request:
+
+=over
+
+=item B<parse_op>
+
+  $op_components = parse_op( $op );
+
+Given an L<IPC::Run> compatible stream operator, parse it into
+components C<Op>, C<N>, and C<M>.  Returns a hashref with the
+information indexed by the component names.
+
+If the operator indicates that additional parameters are required
+(such as the name of a file to be read or written to), the attribute
+C<param> will be set.
+
+=back
 
 =head1 COPYRIGHT & LICENSE
 
