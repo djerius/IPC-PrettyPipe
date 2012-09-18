@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use IPC::PrettyPipe::Stream;
+use IPC::PrettyPipe::Stream 'parse_op';
 
 use Test::More;
 use Test::Exception;
@@ -95,18 +95,15 @@ sub test {
 
     my ( %par ) = @_;
 
-    my $stream = IPC::PrettyPipe::Stream->new( op => $par{op} );
-
-    my %got = (
-        Op => $stream->Op,
-        $stream->has_N ? ( N => $stream->N ) : (),
-        $stream->has_M ? ( M => $stream->M ) : (),
-    );
-
     $par{desc} //= $par{op};
 
-    is_deeply( \%got, $par{expect}, $par{desc} );
+    lives_ok {
+	    my $got = parse_op( $par{op} );
 
+	    delete $got->{param};
+
+	    is_deeply( $got, $par{expect} );
+    } $par{desc};
 
 }
 
@@ -116,6 +113,7 @@ for my $test ( @tests ) {
 
 	my @ftests;
 
+	# fill in N & M
 	my %r = ( N => [ 3, 45 ],
 	          M => [ 6, 78 ]
 	        );
@@ -149,6 +147,35 @@ for my $test ( @tests ) {
 
 	test( %$_ ) for @ftests;
 }
+
+# test if param checking works
+
+lives_and {
+
+	my $op = parse_op( '2>&3' );
+
+    is( $op->{Op}, '>&' );
+	is( !!$op->{param}, !!0 );
+
+} 'N>&M';
+
+lives_and {
+
+	my $op = parse_op( '>' );
+
+    is( $op->{Op}, '>' );
+	is( $op->{param}, 1 );
+
+} '>';
+
+lives_and {
+
+	my $op = parse_op( '>&' );
+
+    is( $op->{Op}, '>&' );
+	is( $op->{param}, 1 );
+
+} '>&';
 
 
 done_testing;
