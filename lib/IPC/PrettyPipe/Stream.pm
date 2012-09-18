@@ -153,18 +153,16 @@ sub parse_op {
 
     # force a copy of the hash; it's magical and a simple return
     # of the elements doesn't work.
-    my $opc = { %+ };
+    my %opc = map { $_ => $+{$_} } grep { exists $+{$_} } qw[ N M Op ];
 
     # fill in default value for N & M for stdin & stdout
-    $opc->{N} = substr($opc->{Op},0,1) eq '<' ? 0 : 1
-      if exists $opc->{first} && ! defined $opc->{N};
+    $opc{N} = substr($opc{Op},0,1) eq '<' ? 0 : 1
+      if exists $+{first} && ! defined $opc{N};
 
-    $opc->{param}++
-      if $opc->{first} || $opc->{'stdout_stderr'};
+    $opc{param}++
+      if $+{first} || $+{'stdout_stderr'};
 
-    delete $opc->{first};
-
-    return $opc;
+    return \%opc;
 }
 
 sub render {
