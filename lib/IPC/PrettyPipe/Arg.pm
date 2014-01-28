@@ -1,6 +1,6 @@
 # --8<--8<--8<--8<--
 #
-# Copyright (C) 2012 Smithsonian Astrophysical Observatory
+# Copyright (C) 2013 Smithsonian Astrophysical Observatory
 #
 # This file is part of IPC::PrettyPipe
 #
@@ -21,12 +21,9 @@
 
 package IPC::PrettyPipe::Arg;
 
-use strict;
-use warnings;
 use Carp;
 
 use Params::Check qw[ check ];
-use String::ShellQuote qw[ shell_quote ];
 
 use IPC::PrettyPipe::Check;
 
@@ -35,88 +32,94 @@ use MooX::Types::MooseLike::Base ':all';
 
 has name => (
     is       => 'ro',
-    isa      => Str,
+    isa      => Compose( Defined, Str ),
     required => 1,
 );
 
 has value => (
     is        => 'rwp',
-    isa       => Str,
+    isa       => Compose( Defined, Str ),
     predicate => 1,
 );
 
-has pfx => (
-    is      => 'ro',
-    isa       => Str,
-    default => sub { '' },
+use IPC::PrettyPipe::Arg::Format;
+
+IPC::PrettyPipe::Arg::Format->shadow_attrs;
+
+with 'MooX::Attributes::Shadow::Role';
+
+shadowable_attrs( 'fmt',
+		  values %{IPC::PrettyPipe::Arg::Format->shadowed_attrs }
+		);
+
+with 'IPC::PrettyPipe::Queue::Element';
+
+has fmt => (
+	    is => 'ro',
+	    lazy => 1,
+	    handles => [ keys %{IPC::PrettyPipe::Arg::Format->shadowed_attrs} ],
+	    default => sub {
+		IPC::PrettyPipe::Arg::Format->new_from_attrs( shift );
+	    },
 );
 
-has sep => (
-    is        => 'ro',
-    isa       => ArgSep,
-    default => sub { undef },
-    predicate => 1,
-);
+
+# accept full attribute interface, or
+#  new( name );
+#  new( [ name, value ] );
 
 sub BUILDARGS {
 
-	my $class = shift;
+    my $class = shift;
 
-	return $_[0] if @_ == 1 && 'HASH' eq ref $_[0];
+    if ( @_ == 1 ) {
 
-	return { name => shift } if @_ == 1;
+        return $_[0] if 'HASH' eq ref( $_[0] );
 
-	return { name => shift, value => shift }
-	  if @_ == 2 && $_[0] ne 'name';
+        return { name => $_[0][0], value => $_[0][1] }
+          if 'ARRAY' eq ref( $_[0] ) && @{ $_[0] } == 2;
 
-	return {@_};
+        return { name => $_[0] };
+
+    }
+
+    return {@_};
+}
+
+# for render templates
+sub has_blank_value {
+
+
+    return $_[0]->has_value && $_[0]->value eq '';
+
 }
 
 sub render {
 
     my $self = shift;
 
-    ## no critic (ProhibitAccessOfPrivateData)
+    my $fmt = $self->fmt;
 
-    my $args = check( {
-            sep     => { allow   => CheckArgSep },
-            defsep  => { allow   => CheckArgSep },
-            quote   => { default => 0,           allow   => CheckBool },
-            flatten => { allow   => CheckBool,   default => 0 },
-        },
-        ( 'HASH' eq ref $_[0] ? $_[0] : {@_} )
-    ) or croak( Params::Check::last_error );
-
-    my @retval;
+    my $name = ($fmt->has_pfx ? $fmt->pfx : '' ) . $self->name;
 
     if ( $self->has_value ) {
 
-        ## no critic (ProhibitAccessOfPrivateData)
+        if ( $fmt->has_sep ) {
 
-	    my $sep = $args->{sep} // $self->sep;
+	    return join( '', $name, $fmt->sep, $self->value );
 
-        @retval =
-          defined $sep
-          ? $self->pfx . $self->name . $sep . $self->value
-          : ( $self->pfx . $self->name, $self->value );
+        }
+	else {
 
+	    return $name, $self->value;
+	}
     }
 
     else {
 
-        @retval = $self->pfx . $self->name;
+	return $name;
     }
 
-    @retval = map { shell_quote( $_ ) } @retval
-      if $args->{quote};
-
-    @retval = ( join( $args->{defsep}, @retval ) )
-      if exists $args->{defsep};
-
-    return
-        1 == @retval      ? $retval[0]
-      : $args->{flatten}  ? @retval
-      :                     \@retval;
 }
 
 sub valmatch {
@@ -147,7 +150,6 @@ sub valsubst {
 
 1;
 
-
 __END__
 
 =head1 NAME
@@ -158,15 +160,13 @@ IPC::PrettyPipe::Arg - An argument to a IPC::PrettyPipe::Cmd command
 
   use IPC::PrettyPipe::Arg;
 
-  # positional arguments
-  $bool_arg  = IPC::PrettyPipe::Arg->new( $name );
-  $value_arg = IPC::PrettyPipe::Arg->new( $name, $value );
+  # standard constructor
+  $arg = IPC::PrettyPipe::Arg->new( name  => $name,
+                                    value => $value, %attr );
 
-  # named arguments; allows specifying other attributes, such as prefix
-  # note enclosure in hash
-  $bool_arg  = IPC::PrettyPipe::Arg->new( { name => $name } );
-  $value_arg = IPC::PrettyPipe::Arg->new( { name => $name,
-                                          value => $value } );
+  # concise constructors
+  $arg = IPC::PrettyPipe::Arg->new( $name );
+  $arg = IPC::PrettyPipe::Arg->new( [ $name, $value ] );
 
   # perform value substitution
   $arg->valsubst( $pattern, $rep );
@@ -177,8 +177,7 @@ IPC::PrettyPipe::Arg - An argument to a IPC::PrettyPipe::Cmd command
 =head1 DESCRIPTION
 
 B<IPC::PrettyPipe::Arg> objects are containers for arguments to commands in an
-B<IPC::PrettyPipe::Cmd> object.  They are typically automatically created
-by the B<IPC::PrettyPipe::Cmd> object.
+B<IPC::PrettyPipe::Cmd> object.
 
 =head1 METHODS
 
@@ -186,16 +185,15 @@ by the B<IPC::PrettyPipe::Cmd> object.
 
 =item B<new>
 
-  # positional interface
-  $arg = IPC::PrettyPipe::Arg->new( $name );
-  $arg = IPC::PrettyPipe::Arg->new( $name, $value );
-
-  # named interface; may provide additional attributes
-  $arg = IPC::PrettyPipe::Arg->new( name => $name, value => $value );
+  # named parameters; may provide additional attributes
   $arg = IPC::PrettyPipe::Arg->new( \%attr );
 
-Objects may be created either with a simplified positional interface, or with
-a named argument interface, which provides additonal attributes.
+  # concise interface; no additional attributes
+  #: switch arg
+  $arg = IPC::PrettyPipe::Arg->new( $name );
+
+  #: arg w/ value
+  $arg = IPC::PrettyPipe::Arg->new( [ $name, $value ] );
 
 The available attributes are:
 
@@ -215,74 +213,45 @@ A string prefix to be applied to the argument name before being
 rendered. This is often C<-> or C<-->.
 
 A prefix is not required (the argument name may already have it). This
-attribute is useful when programmatically creating arguments from
-hashes where the keys do not contain a prefix.
+attribute is useful when creating arguments from hashes where the keys
+do not contain a prefix.
 
 =item C<sep>
 
 A string to insert between the argument name and value when rendering.
 In some cases arguments must be a single string where the name and
 value are separated with an C<=> character; in other cases they
-are treated as separate entities.  This defaults to C<undef>, indicating
-that they are treated as separate entitites.
+are treated as separate entities.  If C<sep> is C<undef> it indicates
+that they are treated as separate entitites.  It defaults to C<undef>.
 
 =back
 
+=item pfx
+
+  $current_value = $self->pfx;
+  $self->pfx( $new_value );
+
+Get or set the value of the C<pfx> attribute.
+
+=item sep
+
+  $current_value = $self->sep;
+  $self->sep( $new_value );
+
+Get or set the value of the C<sep> attribute.
+
 =item B<render>
 
-  $rendered_arg = $arg->render( %options )
+  @rendered_arg = $arg->render;
 
-Render the argument.  If the argument's C<sep> attribute is defined, B<render>
-returns a string which looks like:
+Render the argument.  If the argument's C<sep> attribute is
+defined, B<render> returns a string which looks like:
 
   $pfx . $name . $sep . $value
 
 If C<sep> is not defined, it returns an array ref which looks like
 
-  [ $pfx . $name, $value ]
-
-unless the C<flatten> option is specified, in which case it returns a list
-
   $pfx . $name, $value
-
-If the argument has no value, it returns
-
-  $pfx . $name
-
-The available options are:
-
-=over
-
-=item C<sep>
-
-Override the existing value of the C<sep> attribute.
-
-=item C<defsep>
-
-Override the existing value of the C<sep> attribute, but only if it
-was C<undef>. Quoting is also affected; see below.
-
-=item C<quote>
-
-Quote the rendered argument so that it's contents will survive parsing
-by a shell (currently uses L<String::ShellQuote>).
-
-If the argument has a defined C<sep> attribute, the entire
-
-  $pfx . $name . $sep . $value
-
-string is quoted at once.  Otherwise  the argument's name and
-value are quoted separately.
-
-If the C<defsep> option is specified, the quotation is done prior
-to joining the name and value with C<defsep>
-
-=item C<flatten>
-
-Return a list rather than an arrayref if C<sep> is undefined and the
-argument has a value.
-
-=back
 
 =item valmatch
 
@@ -303,7 +272,7 @@ If the argument has a value, perform the equivalent to
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2012 Smithsonian Astrophysical Observatory
+Copyright 2013 Smithsonian Astrophysical Observatory
 
 This software is released under the GNU General Public License.  You
 may find a copy at

@@ -8,41 +8,60 @@ use IPC::PrettyPipe::Stream;
 use Test::More;
 use Test::Exception;
 
-sub new { IPC::PrettyPipe::Stream->new( @_ ) } 
+use Test::Lib;
+use My::Tests;
 
+sub new { IPC::PrettyPipe::Stream->new( @_ ) }
 
-lives_and {
+test_attr(
+    \&new,
 
-    is( new( '2>&3' )->op, '2>&3' )
+    {
+        desc     => 'just a spec',
+        new      => ['2>&3'],
+        expected => { spec => '2>&3' }
+    },
 
-} 'just an op';
+    {
+        desc => 'spec+file',
+        new      => [ [ '>' => 'output' ] ],
+        expected => {
+            spec   => '>',
+            file => 'output'
+        }
+    },
 
-lives_and {
+    {
+        desc => '> no file, strict = 0',
+        new      => [
+                      { spec => '>', strict => 0 }
+                    ],
+        expected => { requires_file => 1 }
+    },
 
-    my $arg = new( '>' => 'output' );
+);
 
-    is( $arg->op, '>' );
-
-    is( $arg->file, 'output' );
-
-} 'op+file';
 
 throws_ok {
 
     new( '>>>' );
 
-} qr/cannot parse/, "bad operator";
+}
+qr/cannot parse/, "bad spec";
 
 throws_ok {
 
-	new( '>' );
+    new( '>' );
 
-} qr/requires a file/, '> no file';
+}
+qr/requires a file/, '> no file';
+
 
 throws_ok {
 
-	new( '<' );
+    new( '<' );
 
-} qr/requires a file/, '< no file';
+}
+qr/requires a file/, '< no file';
 
 done_testing;

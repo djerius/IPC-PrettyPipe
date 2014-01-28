@@ -21,14 +21,13 @@
 
 package IPC::PrettyPipe::Cmd;
 
-use strict;
-use warnings;
 use Carp;
 
-use List::Util qw[ sum first ];
+use List::Util qw[ sum ];
+use Scalar::Util qw[ blessed ];
 use Params::Check qw[ check ];
 
-use String::ShellQuote qw[ shell_quote ];
+use Try::Tiny;
 
 use Safe::Isa;
 
@@ -39,223 +38,270 @@ use IPC::PrettyPipe::Stream;
 use Moo;
 use MooX::Types::MooseLike::Base ':all';
 
+
+use IPC::PrettyPipe::Queue;
+use IPC::PrettyPipe::Arg::Format;
+
+with 'IPC::PrettyPipe::Queue::Element';
+
+IPC::PrettyPipe::Arg::Format
+  ->shadow_attrs( fmt => sub { 'arg' . shift } );
+
 has cmd => (
-    is    => 'ro',
-    isa   => Str,
+    is       => 'ro',
+    isa      => sub { defined $_[0] && is_Str($_[0])
+			or die( "must be a defined scalar\n" ); },
     required => 1,
 );
 
-has _args => (
+# delay building args until all attributes have been specified
+has _init_args => (
     is       => 'ro',
     init_arg => 'args',
-    coerce   => sub { ref $_[0] ? $_[0] : [ $_[0] ] },
-    isa      => sub {
-        die( "args must be a scalar or list\n" )
-          unless 'ARRAY' eq ref( $_[0] );
+    coerce   => sub {
+        ( is_Str( $_[0] ) || $_[0]->$_isa( 'IPC::PrettyPipe::Arg' ) )
+          ? [ $_[0] ]
+          : $_[0];
     },
-    default => sub { [] },
-    clearer => 1,
-);
-
-# must delay building args until all attributes have been specified
-has args => (
-    is       => 'lazy',
-    init_arg => undef,
-);
-
-has argsep => (
-    is        => 'rw',
-    isa       => ArgSep,
-    default   => sub { undef },
+    isa => sub {
+        die( "args must be a scalar or list\n" )
+          unless is_ArrayRef( $_[0] );
+    },
     predicate => 1,
+    clearer   => 1,
 );
 
-
-has argpfx => (
-    is        => 'rw',
-    default   => sub { '' },
+has args => (
+    is       => 'ro',
+    default  => sub { IPC::PrettyPipe::Queue->new },
+    init_arg => undef,
 );
 
 has streams => (
-    is        => 'ro',
-    default   => sub { [] },
+    is       => 'ro',
+    default  => sub { IPC::PrettyPipe::Queue->new },
     init_arg => undef,
+);
+
+has argfmt => (
+  is => 'ro',
+  lazy => 1,
+  handles => IPC::PrettyPipe::Arg::Format->shadowed_attrs,
+  default => sub { IPC::PrettyPipe::Arg::Format->new_from_attrs( shift ) },
 );
 
 sub BUILDARGS {
 
     my $class = shift;
 
-    return $_[0] if 1 == @_ && 'HASH' eq ref $_[0];
+    if ( @_ == 1 ) {
 
-    return { cmd => shift, args => [@_] };
+	    return $_[0] if 'HASH' eq ref( $_[0] );
+
+	    return { cmd => $_[0][0], args => $_[0][1] }
+	      if 'ARRAY' eq ref($_[0]) && @{$_[0]} == 2;
+
+	    return { cmd => $_[0] };
+
+    }
+    return { @_ };
 }
 
-sub _build_args {
+
+sub BUILD {
+
 
     my $self = shift;
 
-    my $args = [];
+    if ( $self->_has_init_args ) {
 
-    $self->_add( $args, $_ ) foreach @{ $self->_args };
+        $self->ffadd( @{ $self->_init_args } );
+        $self->_clear_init_args;
+    }
 
-    $self->_clear_args;
-
-    return $args;
+    return;
 }
 
 sub add {
 
     my $self = shift;
 
-    $self->_add( $self->args, @_ );
+    unshift @_, 'arg' if @_ == 1;
 
-    return;
-}
+    ## no critic (ProhibitAccessOfPrivateData)
 
-# do something with an argument
-sub _handle_arg {
+    my $argfmt = $self->argfmt->clone;
 
-    my ( $self, $attr, $args, $arg ) = ( shift, shift, shift, shift );
+    my $argfmt_attrs = IPC::PrettyPipe::Arg::Format->shadowed_attrs;
 
-    if ( $arg->$_isa('IPC::PrettyPipe::Stream') ) {
-
-        push @{ $self->streams }, $arg;
-
-    }
-
-    elsif ( $arg->$_isa('IPC::PrettyPipe::Arg') ) {
-
-        push @{$args}, $arg;
-
-    }
-
-    elsif ( is_Str($arg) ) {
-
-        if ( $arg =~ /[<>]/ ) {
-
-            push @{ $self->streams },
-              IPC::PrettyPipe::Stream->new(
-                op => $arg,
-                ( @_ ? ( target => shift ) : () )
-              );
-        }
-
-        else {
-
-            push @{$args},
-              IPC::PrettyPipe::Arg->new(
-                name => $arg,
-                ( @_ ? ( value => shift ) : () ),
-                %$attr
-              );
-        }
-
-    }
-
-    else {
-        croak( __PACKAGE__, ": unexpected argument $arg" );
-    }
-
-}
-
-sub _add {
-
-    my ( $self, $args, $arg ) = ( shift, shift, shift );
-
-    my $attr = check(
-        {
-            sep     => { default => $self->argsep, allow => CheckArgSep },
-            pfx     => { default => $self->argpfx },
-            boolarr => { default => 0 },
+    my $attr = check( {
+            arg   => { allow => CheckArg, required => 1, },
+            value => { allow => CheckStr, },
+	    argfmt   => { allow => CheckArgFmt },
+            ( map { $_ => {} } keys %{ $argfmt_attrs } ),
         },
         ( 'HASH' eq ref $_[0] ? $_[0] : {@_} )
     ) or croak( __PACKAGE__, "::add ", Params::Check::last_error() );
 
-    if ( $attr->{boolarr} ) {
+    my $arg = $attr->{arg};
+    my $ref = ref $arg;
 
-	croak( "expected arrayref when boolarr is true\n" )
-	  unless 'ARRAY' eq ref $arg;
+    croak( "cannot specify a value if arg is a hash, array, or Arg object\n" )
+      if $ref && exists $attr->{value};
 
-	$self->_handle_arg( $attr, $args, $_ ) for @{ $arg };
+    $argfmt->copy_from( $attr->{argfmt} ) if defined $attr->{argfmt};
+    $argfmt->copy_from( IPC::PrettyPipe::Arg::Format->new_from_hash( $attr ) );
+
+    if ( 'HASH' eq $ref ) {
+
+        while ( my ( $name, $value ) = each %$arg ) {
+
+            $self->args->push(
+                IPC::PrettyPipe::Arg->new(
+                    name  => $name,
+                    value => $value,
+                    fmt   => $argfmt->clone
+                ) );
+
+        }
+    }
+
+    elsif ( 'ARRAY' eq $ref ) {
+
+        for ( my $idx = 0 ; $idx < @$arg ; $idx += 2 ) {
+
+            $self->args->push(
+                IPC::PrettyPipe::Arg->new(
+                    name  => $arg->[$idx],
+                    value => $arg->[ $idx + 1 ],
+                    fmt   => $argfmt->clone
+                ) );
+
+        }
+    }
+
+    elsif ( $arg->$_isa( 'IPC::PrettyPipe::Arg' ) ) {
+
+        $self->args->push( $arg );
 
     }
 
+    # everything else
     else {
 
-	my $ref = ref $arg;
-
-        if ( 'HASH' eq $ref ) {
-
-            while ( my ( $key, $value ) = each %$arg ) {
-
-		$self->_handle_arg( $attr, $args, $key, $value );
-
-            }
-        }
-
-        elsif ( 'ARRAY' eq $ref ) {
-
-            ## no critic (ProhibitAccessOfPrivateData)
-            my $idx = 0;
-            while ( $idx < @$arg ) {
-
-                if ( ref $arg->[$idx] ) {
-
-		    $self->_handle_arg( $attr, $args, $arg->[$idx++] );
-
-                }
-
-                else {
-
-                    croak( __PACKAGE__,
-                        "::add: not enough elements in array: '@$arg'" )
-                      if $idx + 1 == @$arg;
-
-		    $self->_handle_arg( $attr, $args, @{$arg}[$idx, $idx+1] );
-                    $idx += 2;
-                }
-
-            }
-
-        }
-
-        # everything else
-        else {
-
-	    $self->_handle_arg( $attr, $args, $arg );
-
-        }
-
+        $self->args->push(
+            IPC::PrettyPipe::Arg->new(
+                name => $attr->{arg},
+                exists $attr->{value} ? ( value => $attr->value ) : (),
+                fmt => $argfmt->clone
+            ) );
     }
 
     return;
 }
 
-sub render {
+
+# free form add
+sub ffadd {
+
+    my $self = shift;
+    my @args = @_;
+
+    my $argfmt = $self->argfmt->clone;
+
+    for ( my $idx = 0 ; $idx < @args ; $idx ++ ) {
+
+        my $t = $args[$idx];
+
+        if ( $t->$_isa( 'IPC::PrettyPipe::Arg::Format' ) ) {
+
+            $t->copy_into( $argfmt );
+
+        }
+
+        elsif ( $t->$_isa( 'IPC::PrettyPipe::Arg' ) ){
+
+            $self->add( arg => $t );
+
+
+        }
+
+        elsif( ref( $t ) =~ /^(ARRAY|HASH)$/ )  {
+
+            $self->add( arg => $t, argfmt => $argfmt->clone );
+
+        }
+
+        elsif ( $t->$_isa( 'IPC::PrettyPipe::Stream' ) ) {
+
+            $self->stream( $t );
+
+        }
+
+        else {
+
+            my $stream;
+
+            try {
+
+                my $stream = IPC::PrettyPipe::Stream->new(
+                    spec     => $t,
+                    strict => 0,
+                );
+
+                if ( $stream->requires_file ) {
+
+	                croak( "arg[$idx]: stream operator $t requires a file\n" )
+	                  if ++$idx == @args;
+
+	                $stream->file( $args[$idx] );
+                }
+
+                $self->stream( $stream );
+            }
+            catch {
+
+                die $_ if /requires a file/;
+
+                $self->add( arg => $t, argfmt => $argfmt->clone );
+            };
+
+        }
+    }
+
+    return;
+}
+
+sub stream {
 
     my $self = shift;
 
-    my $args = check( {
-            sep     => { allow => CheckArgSep },
-            defsep  => { allow => CheckArgSep },
-            flatten => { allow => CheckBool, default => 0 },
-            quote   => { allow => CheckBool, default => 0 },
-            stream  => { allow => CheckBool, default => 0 },
-        },
-        ( 'HASH' eq ref $_[0] ? $_[0] : {@_} )
-    ) or croak( __PACKAGE__, ': ', Params::Check::last_error );
+    my $spec = shift;
 
-    my $render_stream = delete $args->{stream};
+    if ( $spec->$_isa( 'IPC::PrettyPipe::Stream' ) ) {
 
-    my @retval = (
-                  $self->cmd,
-                  ( map { $_->render( $args ) } @{ $self->args },
-                                                @{ $self->streams }
-                  ),
-                 );
+        croak( "too many arguments\n" )
+          if @_;
 
-    return @retval;
+        $self->streams->push( $spec );
+
+    }
+
+    elsif ( !ref $spec ) {
+
+	$self->streams->push(
+          IPC::PrettyPipe::Stream->new( spec => $spec, +@_ ? ( file => @_ ) : () )
+			     );
+    }
+
+    else {
+
+        croak( "illegal stream specification\n" );
+
+    }
+
+
+    return;
 }
 
 
@@ -264,7 +310,7 @@ sub valmatch {
     my $pattern = shift;
 
     # find number of matches;
-    return sum 0, map { $_->valmatch( $pattern ) } @{ $self->args };
+    return sum 0, map { $_->valmatch( $pattern ) } @{ $self->args->elements };
 }
 
 sub valsubst {
@@ -283,7 +329,7 @@ sub valsubst {
             firstvalue => { allow    => CheckStr },
         },
         \%args
-    ) or croak( __PACKAGE__, ': ', Params::Check::last_error );
+    ) or croak( __PACKAGE__, 'valsubst: ', Params::Check::last_error );
 
     my $nmatch = $self->valmatch( $args->{pattern} );
 
@@ -299,11 +345,11 @@ sub valsubst {
     }
 
     my $match = 0;
-    foreach ( @{ $self->args } ) {
+    foreach ( @{ $self->args->elements } ) {
 
         $match++
           if $_->valsubst( $pattern,
-              $match == 0               ? $args->{firstvalue}
+              $match == 0 ? $args->{firstvalue}
             : $match == ( $nmatch - 1 ) ? $args->{lastvalue}
             :                             $args->{value} );
     }
@@ -325,61 +371,68 @@ IPC::PrettyPipe::Cmd - A command in an IPC::PrettyPipe pipeline
 
   use IPC::PrettyPipe::Cmd;
 
-  # one shot creation of command; group arguments and values, streams
-  $cmd = IPC::PrettyPipe::Cmd->new( make => [ '-f', 'Makefile' ],
-                                    [ '>', 'output_file' ],
+  # named arguments; may specify additional options
+  $cmd = IPC::PrettyPipe::Cmd->new( cmd  => $cmd,
+                                    args => $args,
+                                    %attrs
                                   );
 
-  # mix long and short arguments; default to short
+  # concise constructor interface
+  $cmd = IPC::PrettyPipe::Cmd->new( $cmd );
+  $cmd = IPC::PrettyPipe::Cmd->new( [ $cmd, $args ] );
+
+  #####
+  # specify different argument prefices for different arguments
   $cmd = IPC::PrettyPipe::Cmd->new( 'ls' );
+
+  # set default prefix to single hyphen
   $cmd->argpfx( '-');
+  $cmd->add( 'f' );    # -f
+  $cmd->add( 'r' );    # -r
 
-  # or use named args; can specify extra attributes
-  # note enclosure in hash
-  $cmd = IPC::PrettyPipe::Cmd->new( { cmd => 'ls', argpfx => '-' } );
+  # add "long" arguments, random order
+  $cmd->add( { width => 80, sort => 'time' },
+               argpfx => '--', argsep => '=' );
 
-  # add a single boolean argument
-  $cmd->add( 'f' );
-  $cmd->add( 'r' );
+  # add "long" arguments, specified order
+  $cmd->add( [ width => 80, sort => 'time' ],
+               argpfx => '--', argsep => '=' );
 
-  # add multiple boolean arguments
-  $cmd->add( [ 'm', 'k' ], boolarr => 1 );
+  # attach a stream to the command
+  $cmd->stream( op => $op, file => $file );
 
-  # add long options; if order is important, use an array instead
-  # of a hash.
-  $cmd->add( { width => 80, sort => 'time' }, pfx => '--', sep => '=' );
+  # be a little more free form in adding arguments
+  $cmd->ffadd( '-l', [-f => 3, -b => 9 ], '>', 'stdout' );
 
   # perform value substution on a command's arguments' values
   $cmd->valsubst( %stuff );
 
-  # attach a stream to the command
-  $cmd->add_stream( $op, [ $target ] );
-
-  # return an encoded, prettified command line
-  $cmd->render;
-
 
 =head1 DESCRIPTION
 
-B<IPC::PrettyPipe::Cmd> objects are containers for the individual commands in a
-pipeline created by B<IPC::PrettyPipe>.  Typically they are created automatically
-by B<IPC::PrettyPipe::add>.
+B<IPC::PrettyPipe::Cmd> objects are containers for the individual
+commands in a pipeline created by B<IPC::PrettyPipe>.  A command
+may have one or more arguments, which may have values.
+
 
 =head1 METHODS
+
+=head2 Constructor
 
 =over
 
 =item B<new>
 
-  # positional arguments
-  $cmd = IPC::PrettyPipe::Cmd->new( $cmd, @args );
-
   # named arguments; other attributes may be specified
   $cmd = IPC::PrettyPipe::Cmd->new( cmd => $cmd, %attr );
 
-Objects may be created either with a simplified positional interface,
-or with a named argument interface, which provides for the possibility
-of specifying additonal attributes.
+  # concise constructor interface
+  $cmd = IPC::PrettyPipe::Cmd->new( $cmd );
+  $cmd = IPC::PrettyPipe::Cmd->new( [ $cmd, $args ] );
+
+
+A comand must be specified; there is no means of creating an object
+without a command.
 
 The available attributes are:
 
@@ -387,126 +440,229 @@ The available attributes are:
 
 =item C<cmd>
 
-The name of the program to execute
+ The name of the program to execute.
 
 =item C<args>
 
-The arguments to the program. If passed as a named attribute, this
-must be an arrayref.  An argument specification may be one of
+The arguments to the program.  C<args> may be
+
+=over
+
+=item *
+
+A scalar, the name of an argument which takes no value
+
+=item *
+
+An B<IPC::PrettyPipe::Arg> object, which is used directly (not copied!).
+
+=item *
+
+An array reference containing more complex argument specifications.
+
+=back
+
+If C<args> is an arrayref, its elements are processed with the B<ffadd> method;
+see it for more details.
+
+=item C<argpfx>
+
+=item C<argsep>
+
+Argument prefix and separator strings to be used for arguments. See
+L<IPC::PrettyPipe::Arg> for more information.
+
+=item C<argfmt>
+
+An B<IPC::PrettyPipe::Arg::Format> object.
+
+=back
+
+=back
+
+=head2 Other methods
+
+=over
+
+=item B<add>
+
+  $cmd->add( $args );
+  $cmd->add( arg => $args, %options );
+
+This method adds one or more additional arguments to the command.  If
+only one parameter is passed to B<add>, it is assumed to be the C<arg>
+parameter.
+
+This is useful if some arguments should be conditionally given, e.g.
+
+	$cmd = IPC::PrettyPipe::Cmd->new( 'ls' );
+	$cmd->add( '-l' ) if $want_long_listing;
+
+
+The available options are:
+
+=over
+
+=item C<arg>
+
+The argument or arguments to add.  It may take one of the following
+values:
 
 =over
 
 =item an B<IPC::PrettyPipe::Arg> object
 
-The object is added (not copied!).
+The is used directly (not copied!).
 
 =item a string
 
-This specifies the argument's name and that it takes no value.
+This specifies the argument's name and indicates that it takes no value.
 
 =item an arrayref
 
-This may contain a combination of B<IPC::PrettyPipe::Arg> objects or
-I<pairs> of names and values.  The arguments will be supplied to the
-command in the order they appear in the array.
+This must contain I<pairs> of names and values.  The arguments will be
+supplied to the command in the order they appear in the array.
 
 =item a hashref
 
 This specifies one or more pairs of names and values.
 The arguments will be supplied to the command in a random order.
 
+=back
+
+=item C<argpfx> = I<string>
+
+=item C<argsep> = I<string>
+
+These override the C<argpfx> and C<argsep> attributes for this
+argument only.
+
+=item C<argfmt> = B<IPC::PrettyPipe::Arg::Format> object
+
+This will override the format attributes for this argument only.
 
 =back
 
+=item B<args>
 
-=item C<argpfx>
+  $args = $cmd->args
 
-A string prefix to be applied to the argument names before being
-rendered.  See the C<pfx> attribute in L<IPC::PrettyPipe::Arg> for
-more information.  This provides a default; it may be overridden.
+Returns an B<IPC::PrettyPipe::Queue> object containing the arguments
+associated with the command.
 
+=item B<argpfx>
 
-=item C<argsep>
+=item B<argsep>
 
-A string to insert between argument names and values when rendering.
-See the C<sep> attribute in L<IPC::PrettyPipe::Arg> for more
-information.  This provides a default; it may be overridden.
+=item B<argfmt>
 
-=back
+These methods retrieve (when called with no arguments) or modify (when
+called with an argument) the similarly named object attributes.  See
+L<IPC::PrettyPipe::Arg> for more information.  Changing them does not
+affect existing arguments, only those created after the modification.
 
-=item B<add>
+=item B<cmd>
 
-  $cmd->add( $args, %options );
+  $cmd_name = $cmd->cmd
 
-This method adds one or more additional arguments to the command.
-This is useful if some arguments should be conditionally given, e.g.
+Return the name of the command.
 
-	$cmd = IPC::PrettyPipe::Cmd->new( 'ls' );
-	$cmd->add( '-l' ) if $want_long_listing;
+=item B<ffadd>
 
-I<$args> may take any of the forms that the C<args> attribute to the
-B<new> method accepts.
+  $cmd->ffadd( @arguments );
 
-The available options are:
+A more relaxed means of adding argument specifications. C<@arguments>
+may contain any of the following items:
 
 =over
 
-=item C<boolarr>
+=item an B<IPC::PrettyPipe::Arg> object
 
-This is a boolean value indicating that the passed C<$args> element is
-an array containing the names of boolean (switch) arguments and not
-name-value pairs.
+The is used directly (not copied!).
 
-=item C<pfx>
+=item a string
 
-A string prefix to be applied to the argument names before being
-rendered.  This overrides that specified by the C<argpfx> attribute
-in the constructor.
+This specifies the argument's name and indicates that it takes no
+value.  However, if it matches a stream operation, it will cause a new
+I/O stream to be attached to the command.  If the operation requires
+an additional parameter, the next value in C<@arguments> will be used
+for that parameter.
+
+=item an arrayref
+
+This must contain I<pairs> of names and values.  The arguments will be
+supplied to the command in the order they appear in the array.
+
+=item a hashref
+
+This specifies one or more pairs of names and values.
+The arguments will be supplied to the command in a random order.
+
+=item an B<IPC::PrettyPipe::Arg::Format> object
+
+B<ffadd> keeps a local copy of the C<argsep> and C<argpfx> attributes for
+use when creating new B<IPC::PrettyPipe::Arg> objects.  The local copy
+may be modified by passing in B<IPC::PrettyPipe::Arg::Format>
+objects.  This is typically only useful when using
+B<IPC::PrettyPipe::DSL>, which provides a simpler interface.
+
+=item a B<IPC::PrettyPipe::Stream> object
 
 
-=item C<sep>
+=item a stream specification and optional file name
 
-A string to insert between argument names and values when rendering.
-This overrides that specified by the C<argsep> attribute in the
-constructor.
+Stream specifications are strings which define input and output
+streams for the command.  Stream specifications are defined in
+L<IPC::PrettyPipe::Stream:Utils>.  Filenames (if required) should be
+specified directly after the specification.
 
 =back
 
+=item B<stream>
 
-=item B<render>
+  $cmd->stream( $stream_obj );
+  $cmd->stream( $spec );
+  $cmd->stream( $spec, $file );
 
-  $rendered_cmd = $cmd->render( %options )
+Add an I/O stream to the command.  It may be passed either a stream
+specification (see L<IPC::PrettyPipe::Stream::Utils>) or an
+B<IPC::PrettyPipe::Stream> object, which is used directly (not
+copied).
 
-Render the command, returning an arrayref containing the command and
-its rendered arguments. See the B<render> method in
-L<IPC::PrettyPipe::Arg> for a description of I<%options> and the format
-of the rendered arguments.
+See L</IPC::PrettyPipe::Stream> for more information.
 
+=item B<streams>
+
+  $streams = $cmd->streams
+
+Return an B<IPC::PrettyPipe::Queue> object containing the streams
+associated with the command.
 
 =item B<valmatch>
 
   $n = $cmd->valmatch( $pattern );
 
-Returns the number of arguments whose value a matched the passed
+Returns the number of arguments whose value matches the passed
 regular expression.
 
 =item B<valsubst>
 
   $cmd->valsubst( $pattern, $value, %options );
 
-Replace arguments to options whose arguments match the Perl regular
-expression I<$pattern> with I<$value>. The following options are available:
+Replace the values of arguments whose names match the Perl regular
+expression I<$pattern> with I<$value>. The following options are
+available:
 
 =over
 
 =item C<firstvalue>
 
-If specified, the first occurance of a match will be replaced with
+If true, the first occurance of a match will be replaced with
 this.
 
 =item C<lastvalue>
 
-If specified, the last occurance of a match will be replaced with
+If true, the last occurance of a match will be replaced with
 this.  In the case where there is only one match and both
 C<firstvalue> and C<lastvalue> are specified, C<lastvalue> takes
 precedence.

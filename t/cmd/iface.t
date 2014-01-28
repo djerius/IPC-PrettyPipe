@@ -5,169 +5,237 @@ use warnings;
 
 use IPC::PrettyPipe::Cmd;
 
+use Test::Lib;
+use Test::Deep;
 use Test::More;
 use Test::Exception;
 
 sub new { IPC::PrettyPipe::Cmd->new( @_ ); }
 
-lives_and {
+use My::Tests;
 
-	is( new( 'true' )->cmd, 'true');
-}
-'new: free form, no args';
+test_attr(
+    \&new,
+    {
+        desc => 'new: hash, no args',
+        new      => [     { cmd => 'true' } ],
+        expected => { cmd => 'true' }
+    },
 
-
-lives_and {
-
-	my $cmd = new( 'true', 'false' );
-
-	is( $cmd->cmd, 'true');
-
-	is( $cmd->args->[0]->name, 'false' );
-
-}
-'new: free form, args';
-
-
-lives_and {
-
-	is( new( { cmd => 'true' } )->cmd, 'true');
-}
-'new: hash, no args';
+    {
+        desc => 'new: hash, args',
+        new  => [ {
+                cmd  => 'true',
+                args => ['false'],
+                   debug => 1,
+                  }
+        ],
+        expected => { cmd => 'true' },
+        compare => [ [ 'args->elements->[0]', { name => 'false' } ], ],
+    },
 
 
-lives_and {
-
-	my $cmd = new( { cmd => 'true', args => 'false' } );
-
-	is( $cmd->cmd, 'true');
-
-	is( $cmd->args->[0]->name, 'false' );
-
-}
-'new: hash, args';
-
-lives_and {
-
-	my $cmd = new( { cmd => 'true',
-	                 args => [ [ arg1 => 'false' ] ],
-	                 argpfx  => '--',
-	               } );
-
-	is( $cmd->cmd, 'true');
-
-	is( $cmd->argpfx, '--' );
-
-	is( $cmd->args->[0]->name, 'arg1' );
-	is( $cmd->args->[0]->pfx, '--' );
-	is( $cmd->args->[0]->sep, undef );
-}
-'new: hash, args, pfx';
-
-lives_and {
-
-	my $cmd = new( { cmd => 'true',
-	                 args => [ [ arg1 => 'false' ] ],
-	                 argpfx  => '--',
-	                 argsep  => '='
-	               } );
-
-	is( $cmd->cmd, 'true');
-	is( $cmd->argpfx, '--' );
-	is( $cmd->argsep, '=' );
-
-	is( $cmd->args->[0]->name, 'arg1' );
-	is( $cmd->args->[0]->pfx, '--' );
-	is( $cmd->args->[0]->sep, '=' );
+    {
+        desc => 'new: hash, args, pfx',
+        new  => [ {
+                cmd    => 'true',
+                args   => [ [ arg1 => 'false' ] ],
+                argpfx => '--',
+            }
+        ],
+        expected => {
+            cmd    => 'true',
+            argpfx => '--',
+        },
+        compare => [ [
+                'args->elements->[0]',
+                {
+                    name => 'arg1',
+                    pfx  => '--',
+                    sep  => undef,
+                }
+            ],
+        ],
+    },
 
 
-}
-'new: hash, args, pfx, sep';
+    {
+        desc => 'new: hash, args, pfx, sep',
+
+        new => [ {
+                cmd    => 'true',
+                args   => [ [ arg1 => 'false' ] ],
+                argpfx => '--',
+                argsep => '='
+            }
+        ],
+
+        expected => {
+            cmd    => 'true',
+            argpfx => '--',
+            argsep => '='
+        },
+
+        compare => [ [
+                'args->elements->[0]',
+                {
+                    name => 'arg1',
+                    pfx  => '--',
+                    sep  => '=',
+                }
+            ],
+        ],
+
+    },
+
+
 
 ### existing IPC::PrettyPipe::Arg
 
-lives_and {
+    {
+        desc => 'new, existing Arg object',
+        new  => [
+            cmd  => 'foo',
+            args => IPC::PrettyPipe::Arg->new(
+                name  => '-f',
+                value => 'Makefile'
+            )
+        ],
 
-	my $cmd = new( foo => IPC::PrettyPipe::Arg->new( '-f', 'Makefile' ) );
-	is ( $cmd->args->[0]->name, '-f' );
-	is ( $cmd->args->[0]->value, 'Makefile' );
-} 'new, existing Arg object';
+        expected => { cmd => 'foo' },
 
-lives_and {
+        compare => [ [
+                'args->elements->[0]',
+                {
+                    name  => '-f',
+                    value => 'Makefile',
+                } ]
+        ],
 
-	my $cmd = new( 'foo' );
-	$cmd->add( [ '-f', IPC::PrettyPipe::Arg->new( '-l' ) ], boolarr => 1 );
-	is ( $cmd->args->[0]->name, '-f' );
-	is ( $cmd->args->[1]->name, '-l' );
-} 'new, existing Arg object, boolarr';
+    },
 
-lives_and {
+    {
+        desc => 'new, existing Arg object in array',
 
-	my $cmd = new( 'foo' );
-	$cmd->add( [ -f => 'Makefile',
-	             IPC::PrettyPipe::Arg->new( '-l' )
-	           ]
-	         );
-	is ( $cmd->args->[0]->name, '-f' );
-	is ( $cmd->args->[1]->name, '-l' );
-} 'new, existing Arg object in array';
+        new => [ cmd => 'foo' ],
 
+        methods => [
+            ffadd => sub {
+                [ -f => 'Makefile' ], IPC::PrettyPipe::Arg->new( name => '-l' );
+            },
+        ],
 
-
-###
-lives_and {
-
-	my $cmd = new( { cmd => 'true',
-	                 args => [ [ arg1 => 'false' ] ],
-	                 argpfx  => '--',
-	                 argsep  => '='
-	               } );
-
-	$cmd->add( [ f => 3, b => 9 ], pfx => '-', sep => ' ' );
-
-	is( $cmd->args->[1]->name, 'f' );
-	is( $cmd->args->[1]->value, '3' );
-	is( $cmd->args->[1]->pfx, '-' );
-	is( $cmd->args->[1]->sep, ' ' );
+        compare => [
+            [ 'args->elements->[0]', { name => '-f', } ],
+            [ 'args->elements->[1]', { name => '-l', } ]
+        ],
+    },
 
 
-	is( $cmd->args->[2]->name, 'b' );
-	is( $cmd->args->[2]->value, '9' );
-	is( $cmd->args->[1]->pfx, '-' );
-	is( $cmd->args->[1]->sep, ' ' );
 
-}
-'add, alternate pfx & sep';
+    {
+        desc => 'add, alternate pfx & sep',
+
+        new => [
+            cmd    => 'true',
+            args   => [ [ arg1 => 'false' ] ],
+            argpfx => '--',
+            argsep => '='
+        ],
+
+        methods => [
+            add => [ arg => [ f => 3, b => 9 ], argpfx => '-', argsep => ' ' ],
+        ],
+
+        compare => [ [
+                'args->elements->[0]',
+                {
+                    name  => 'arg1',
+                    value => 'false',
+                    pfx   => '--',
+                    sep   => '=',
+                }
+            ],
+
+            [
+                'args->elements->[1]',
+                {
+                    name  => 'f',
+                    value => '3',
+                    pfx   => '-',
+                    sep   => ' ',
+                }
+            ],
+
+            [
+                'args->elements->[2]',
+                {
+                    name  => 'b',
+                    value => '9',
+                    pfx   => '-',
+                    sep   => ' ',
+                }
+            ],
+        ],
+
+    },
+
+
+    {
+        desc => 'ffadd, stream op',
+
+        new => [ cmd => 'true' ],
+
+        methods => [ ffadd => [ [ f => 3, b => 9 ], '>', 'stdout' ], ],
+
+        compare => [ [
+                'args->elements->[0]',
+                {
+                    name  => 'f',
+                    value => '3',
+                }
+            ],
+
+            [
+                'args->elements->[1]',
+                {
+                    name  => 'b',
+                    value => '9',
+                }
+            ],
+
+            [
+                'streams->elements->[0]',
+                {
+                    spec   => '>',
+                    file => 'stdout'
+                }
+            ],
+        ],
+
+    },
+
+
+
+);
+
 
 ### flush out corner cases
-throws_ok {
-	my $cmd = new( 'ls' );
-
-	$cmd->add( 'l', boolarr => 1 );
-} qr/expected arrayref/, 'boolarr: not an array' ;
 
 throws_ok {
-	my $cmd = new( 'ls' );
+    my $cmd = new( cmd => 'ls' );
 
-	$cmd->add( sub {} );
-} qr/unexpected argument/, 'add: bad argument' ;
-
-throws_ok {
-	my $cmd = new( 'ls' );
-
-	$cmd->add( [ 'l' ] );
-} qr/not enough elements/, 'add array: not enough elements' ;
+    $cmd->add( arg => sub { } );
+}
+qr/invalid type/, 'add: bad argument';
 
 throws_ok {
-	my $cmd = new( 'ls' );
+    my $cmd = new( cmd => 'ls' );
 
-	$cmd->add( [ {} ], boolarr => 1 );
-} qr/unexpected argument/, 'boolarr: not scalar' ;
+    $cmd->add( arg => ['l'] );
+}
+qr/invalid type/, 'add array: not enough elements';
 
-lives_ok {
-	my $cmd = new( 'ls' );
 
-	$cmd->add( 'l', { boolarr => 0 } );
-} 'hash attr to add';
 
 done_testing;

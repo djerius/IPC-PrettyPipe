@@ -9,93 +9,142 @@ use IPC::PrettyPipe::Cmd;
 use Test::More;
 use Test::Exception;
 
+use Test::Lib;
+use My::Tests;
+
 sub new { IPC::PrettyPipe->new( @_ ); }
 
 lives_ok {
 
-	new();
+    IPC::PrettyPipe->new();
 }
 'new';
 
-lives_ok {
+test_attr(
+    \&new,
 
-     my %args = ( argpfx => 'a',
-                  argsep => 'b',
-                  cmdpfx => 'c',
-                  cmdoptsep => 'd',
-                  optsep => 'e',
-                  optpfx => 'f',
-                );
-
-     my $p = new( \%args );
-
-     is( $p->$_, $args{$_} ) for keys %args;
-}
-'new, hash';
-
-lives_ok {
-
-    is ( new( [ 'ls' ] )->cmds->[0]->cmd, 'ls' );
-}
-'new cmd';
-
-lives_ok {
-
-    is ( new( IPC::PrettyPipe::Cmd->new(  'ls' )  )->cmds->[0]->cmd, 'ls' );
-}
-'new IPC::PrettyPipe::Cmd';
-
-lives_ok {
-
-    my $pipe = new( [ 'ls' ],
-		    ['make', [ '-f', 'Makefile' ], '-k' ]
-		  );
-    my $i = 0;
-
-    is ( $pipe->cmds->[$i]->cmd, 'ls' );
-    $i++;
-
-    is ( $pipe->cmds->[$i]->cmd, 'make' );
-    is ( $pipe->cmds->[$i]->args->[0]->name, '-f' );
-    is ( $pipe->cmds->[$i]->args->[0]->value, 'Makefile' );
-    is ( $pipe->cmds->[$i]->args->[1]->name, '-k' );
-
-}
-'add 2 cmds +args';
+    {
+        desc => 'new cmd',
+        new => [ cmds => 'ls' ],
+        compare => [ [ 'cmds->elements->[0]', { cmd => 'ls' } ], ],
+    },
 
 
-lives_ok {
+    {
+        desc => 'new IPC::PrettyPipe::Cmd',
+        new => sub { IPC::PrettyPipe::Cmd->new( 'ls' ) },
+        compare => [ [ 'cmds->elements->[0]', { cmd => 'ls' } ], ],
+    },
 
-    my $pipe = new();
-    $pipe->add( 'make', [ '-f', 'Makefile' ], '-k' );
+    {
+        desc => 'add 2 cmds +args',
 
-    is ( $pipe->cmds->[0]->cmd, 'make' );
-    is ( $pipe->cmds->[0]->args->[0]->name, '-f' );
-    is ( $pipe->cmds->[0]->args->[0]->value, 'Makefile' );
-    is ( $pipe->cmds->[0]->args->[1]->name, '-k' );
+        new => [],
+        methods =>
+          [ ffadd => [ ['ls'], [ 'make', [ '-f', 'Makefile' ], '-k' ] ], ],
 
-    $pipe->add( 'ls', '-l' );
-    is ( $pipe->cmds->[1]->cmd, 'ls' );
-    is ( $pipe->cmds->[1]->args->[0]->name, '-l' );
+        compare => [
 
-}
-'add cmd+args';
+            [ 'cmds->elements->[0]', { cmd => 'ls' } ],
 
-lives_ok {
+            [ 'cmds->elements->[1]', { cmd => 'make' } ],
 
-    my $pipe = new();
-    $pipe->add( IPC::PrettyPipe::Cmd->new( 'make', [ '-f', 'Makefile' ], '-k' ) );
+            [
+                'cmds->elements->[1]->args->elements->[0]',
+                {
+                    name  => '-f',
+                    value => 'Makefile',
+                },
+            ],
 
-    is ( $pipe->cmds->[0]->cmd, 'make' );
-    is ( $pipe->cmds->[0]->args->[0]->name, '-f' );
-    is ( $pipe->cmds->[0]->args->[0]->value, 'Makefile' );
-    is ( $pipe->cmds->[0]->args->[1]->name, '-k' );
+            [ 'cmds->elements->[1]->args->elements->[1]', { name => '-k', }, ],
+        ],
+    },
 
-    $pipe->add( 'ls', '-l' );
-    is ( $pipe->cmds->[1]->cmd, 'ls' );
-    is ( $pipe->cmds->[1]->args->[0]->name, '-l' );
 
-}
-'add Cmd object';
+    {
+        desc => 'add cmd+args',
+
+        new => [],
+
+        methods => [
+            ffadd => [ [ 'make', [ '-f', 'Makefile' ], '-k' ] ],
+            ffadd => [ [ 'ls', '-l' ] ],
+        ],
+
+        compare => [
+            [ 'cmds->elements->[0]', { cmd => 'make' } ],
+
+            [
+                'cmds->elements->[0]->args->elements->[0]',
+                {
+                    name  => '-f',
+                    value => 'Makefile',
+                },
+            ],
+
+            [ 'cmds->elements->[0]->args->elements->[1]', { name => '-k', }, ],
+
+            [ 'cmds->elements->[1]', { cmd => 'ls' } ],
+
+            [ 'cmds->elements->[1]->args->elements->[0]', { name => '-l', }, ],
+
+        ],
+
+    },
+
+    {
+        desc => 'add Cmd object',
+
+        new => [],
+
+        methods => [
+            add => sub {
+                cmd => IPC::PrettyPipe::Cmd->new(
+                    cmd  => 'make',
+                    args => [ [ '-f', 'Makefile' ], '-k' ] );
+            },
+            add => [ cmd => 'ls', args => ['-l'] ],
+        ],
+
+        compare => [
+            [ 'cmds->elements->[0]', { cmd => 'make' } ],
+
+            [
+                'cmds->elements->[0]->args->elements->[0]',
+                {
+                    name  => '-f',
+                    value => 'Makefile',
+                },
+            ],
+
+            [ 'cmds->elements->[0]->args->elements->[1]', { name => '-k', }, ],
+
+            [ 'cmds->elements->[1]', { cmd => 'ls' } ],
+
+            [ 'cmds->elements->[1]->args->elements->[0]', { name => '-l', }, ],
+
+        ],
+
+    },
+
+    {
+        desc    => 'ffadd stream',
+     dbg => 1,
+        new     => [],
+        methods => [ ffadd => [ ['ls'], '>', 'stdout' ] ],
+        compare => [
+            [ 'cmds->elements->[0]', { cmd => 'ls' } ],
+            [
+                'streams->elements->[0]',
+                {
+                    Op   => '>',
+                    file => 'stdout',
+                }
+            ],
+        ],
+    },
+
+);
 
 done_testing;

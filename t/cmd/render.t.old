@@ -4,11 +4,11 @@ use strict;
 use warnings;
 
 use IPC::PrettyPipe::Cmd;
-
+use IPC::PrettyPipe::DSL::Arg qw[ sep pfx ];
 use Test::More;
 use Test::Exception;
 
-sub new { IPC::PrettyPipe::Cmd->new( @_ ); }
+sub new { IPC::PrettyPipe::Cmd->new( cmd => shift(), ( @_ ? (args => \@_) : () )); }
 
 
 sub run_methods {
@@ -40,7 +40,6 @@ sub run_test {
         run_methods( $cmd, @{ $args{methods} } );
 
         is_deeply( [ $cmd->render( @{ $args{render} } ) ], $args{expect} );
-
     }
     $args{desc};
 
@@ -58,22 +57,12 @@ my @tests = (
     },
 
     {
-        desc    => 'list, add',
+        desc    => 'list, arg',
         new     => ['ls'],
         methods => [
             argpfx => ['-'],
-            add    => ['l'],
-            add    => ['r'],
-        ],
-        expect => [ 'ls', '-l', '-r' ],
-    },
-
-    {
-        desc    => 'list, add',
-        new     => ['ls'],
-        methods => [
-            argpfx => ['-'],
-            add    => [ ['l', 'r'], boolarr => 1 ],
+            ffadd    => ['l'],
+            ffadd    => ['r'],
         ],
         expect => [ 'ls', '-l', '-r' ],
     },
@@ -85,20 +74,23 @@ my @tests = (
     },
 
     {
-        desc => 'add hash',
+        desc => 'arg hash',
         new  => [ 'ls' ],
         methods => [
                     argsep => [ ' ' ],
-                    add => [ { -W => 80 } ],
+                    ffadd => [ { -W => 80 } ],
                    ],
         expect => [ 'ls', '-W 80' ],
     },
 
     {
-        desc => 'array, add',
+        desc => 'array, arg',
         new  => ['ls'],
         methods =>
-          [ add => [ [ width => 80, tab => 3 ], pfx => '--', sep => '=' ], ],
+          [ ffadd => [ pfx '--', sep '=',
+                       [ width => 80, tab => 3 ],
+                     ],
+          ],
         expect => [ 'ls', '--width=80', '--tab=3' ],
     },
 

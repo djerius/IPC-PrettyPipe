@@ -21,254 +21,334 @@
 
 package IPC::PrettyPipe;
 
-use strict;
-use warnings;
+our $VERSION = '1.21';
 
 use Carp;
 
-use String::ShellQuote qw[ shell_quote ];
 use List::Util qw[ sum ];
+use Module::Load qw[ load ];
+use Module::Path qw[ module_path ];
+use Module::Runtime 'compose_module_name';
 use Safe::Isa;
+use Try::Tiny;
 
 use Params::Check qw[ check ];
 
 use Moo;
+use Moo::Role ();
 use MooX::Types::MooseLike::Base ':all';
+
 
 use IPC::PrettyPipe::Cmd;
 use IPC::PrettyPipe::Check;
+use IPC::PrettyPipe::Queue;
+use IPC::PrettyPipe::Arg::Format;
 
-our $VERSION = '1.21';
 
-has argpfx => (
-    is      => 'rw',
-    predicate => 1,
-    default => sub { '' },
+
+IPC::PrettyPipe::Arg::Format->shadow_attrs( fmt => sub { 'arg' . shift } );
+
+has argfmt => (
+  is => 'ro',
+  lazy => 1,
+  handles => IPC::PrettyPipe::Arg::Format->shadowed_attrs,
+  default => sub { IPC::PrettyPipe::Arg::Format->new_from_attrs( shift ) },
 );
 
-has argsep => (
-    is      => 'rw',
-    isa     => ArgSep,
-    predicate => 1,
-    default => sub { undef },
-);
-
-has cmdsep => (
-    is      => 'rw',
-    isa     => Str,
-    default => sub { " \\\n" },
-);
-
-
-has cmdpfx => (
-    is      => 'rw',
-    isa     => Str,
-    default => sub { "\t" },
-);
-
-has cmdoptsep => (
-    is      => 'rw',
-    isa     => Str,
-    default => sub { " \\\n" },
-);
-
-has optsep => (
-    is      => 'rw',
-    isa     => Str,
-    default => sub { " \\\n" },
-);
-
-has optpfx => (
-    is      => 'rw',
-    isa     => Str,
-    default => sub { "\t  " },
+has streams => (
+    is       => 'ro',
+    default  => sub { IPC::PrettyPipe::Queue->new },
+    init_arg => undef,
 );
 
 
-has stream => (
-    is => 'rw',
-    isa => ArrayRef[InstanceOf['IPC::PrettyPipe::Stream']],
-    default => sub { [] }
-);
-
-
-has _cmds => (
+has _init_cmds => (
     is       => 'ro',
     init_arg => 'cmds',
-    coerce   => sub { 'ARRAY' ne ref $_[0] ? [ $_[0] ] : $_[0] },
-    isa      => sub {
+    coerce   => sub {
+        ( is_Str( $_[0] ) || $_[0]->$_isa( 'IPC::PrettyPipe::Cmd' ) )
+          ? [ $_[0] ]
+          : $_[0];
+    },
+    isa => sub {
         die( "args must be a scalar or list\n" )
           unless 'ARRAY' eq ref( $_[0] );
     },
-    default => sub { [] },
-    clearer => 1,
+    default   => sub { [] },
+    predicate => 1,
+    clearer   => 1,
 );
 
 # must delay building cmds until all attributes have been specified
 has cmds => (
-    is       => 'lazy',
-    init_arg => undef
+    is       => 'ro',
+    default  => sub { IPC::PrettyPipe::Queue->new },
+    init_arg => undef,
 );
 
-sub BUILDARGS {
-
-	my $class = shift;
-
-    return $_[0] if 1 == @_ && 'HASH' eq ref $_[0];
-
-	my @cmds;
-
-	while( @_ ) {
-
-		last
-		  unless $_[0]->$_isa( 'IPC::PrettyPipe::Cmd' )
-		    || 'ARRAY' eq ref $_[0];
-
-		push @cmds, shift;
-
-	}
+has _executor_arg => (
+    is       => 'rw',
+    init_arg => 'executor',
+    default  => sub { 'IPC::Run' },
+    trigger  => sub { $_[0]->_clear_executor },
+);
 
 
-	my %args = @_;
+has _executor => (
+    is      => 'rw',
+    isa     => ConsumerOf[ 'IPC::PrettyPipe::Executor' ],
+    handles => 'IPC::PrettyPipe::Executor',
+    lazy    => 1,
+    clearer => 1,
+    default => sub {
 
-	$args{cmds} = \@cmds
-	  if @cmds;
+        my $backend = $_[0]->_executor_arg;
 
-	return \%args;
+        return $backend->$_does( 'IPC::PrettyPipe::Executor' )
+          ? $backend
+          : $_[0]->_backend_factory( Execute => $backend );
+    },
+);
+
+sub executor {
+    my $self = shift;
+
+    $self->_executor_arg( @_ )
+      if @_;
+
+    return $self->_executor;
 }
 
-sub _build_cmds {
+has _renderer_arg => (
+    is       => 'rw',
+    init_arg => 'renderer',
+    default  => sub { 'Template::Tiny' },
+    trigger  => sub { $_[0]->_clear_renderer },
+);
+
+has _renderer  => (
+    is       => 'rw',
+    isa     => ConsumerOf[ 'IPC::PrettyPipe::Renderer' ],
+    handles  => 'IPC::PrettyPipe::Renderer',
+    lazy    => 1,
+    clearer => 1,
+    default => sub {
+
+	my $backend = $_[0]->_renderer_arg;
+
+	return $backend->$_does( 'IPC::PrettyPipe::Renderer' )
+	  ? $backend
+	  : $_[0]->_backend_factory( Render => $backend )
+	  ;
+      },
+);
+
+sub renderer {
+    my $self = shift;
+
+    $self->_renderer_arg( @_ )
+      if @_;
+
+    return $self->_renderer;
+}
+
+
+
+# accept:
+#  new( \%hash )
+#  new( $cmd )
+#  new( @stuff )
+sub BUILDARGS {
+
+    my $class = shift;
+
+    return
+        @_ == 1
+      ? 'HASH' eq ref( $_[0] )
+          ? $_[0]
+          : { cmds => $_[0] }
+      : {@_};
+
+}
+
+
+sub BUILD {
 
     my $self = shift;
 
-    my $cmds = [];
+    if ( $self->_has_init_cmds ) {
 
-    $self->_add( $cmds, $_ ) foreach @{ $self->_cmds };
+        $self->ffadd( @{ $self->_init_cmds } );
+        $self->_clear_init_cmds;
+    }
 
-    $self->_clear_cmds;
+    return;
 
-    return $cmds;
 }
+
+
 
 sub add {
 
     my $self = shift;
 
-    croak( __PACKAGE__, ": must specify at least the command name\n" )
-      unless @_;
+    unshift @_, 'cmd' if @_ == 1;
 
-	return $self->_add( $self->cmds, \@_ );
+    ## no critic (ProhibitAccessOfPrivateData)
 
-}
+    my $argfmt = $self->argfmt->clone;
 
+    my $argfmt_attrs = IPC::PrettyPipe::Arg::Format->shadowed_attrs;
 
-sub _add {
-
-	my ( $self, $cmds ) = ( shift, shift );
-
-	my ( $cmd, @args ) = 'ARRAY' eq ref $_[0]
-	                   ? @{ $_[0] }
-	                   : @_;
-
-	if ( $cmd->$_isa( 'IPC::PrettyPipe::Cmd' ) ) {
-
-		croak( "cannot specify additional arguments when passing a Cmd object\n" )
-		  if @args;
-
-		push @$cmds, $cmd;
-
-	}
-
-	else {
-
-		my %args = ( cmd => $cmd,
-		             args => \@args );
-
-		$args{argsep} = $self->argsep if $self->has_argsep;
-		$args{argpfx} = $self->argpfx if $self->has_argpfx;
-
-		push @$cmds, IPC::PrettyPipe::Cmd->new( \%args );
-	}
-
-	return $cmd;
-}
-
-sub render {
-
-	my $self = shift;
-
-    my $args = check( {
-            argsep  => { allow => CheckArgSep },
-            argdefsep  => { allow => CheckArgSep },
-            flatten => { allow => CheckBool, default => 0 },
-            quote   => { allow => CheckBool, default => 0 },
+    my $attr = check( {
+            cmd    => { required => 1 },
+	    args   => {},
+	    argfmt   => { allow => CheckArgFmt },
+            ( map { $_ => {} } keys %{ $argfmt_attrs } ),
         },
         ( 'HASH' eq ref $_[0] ? $_[0] : {@_} )
-    ) or croak( __PACKAGE__, ': ', Params::Check::last_error );
+    ) or croak( __PACKAGE__, "::arg ", Params::Check::last_error() );
 
-	$args->{sep} = delete $args->{argsep} if exists $args->{argsep};
-	$args->{defsep} = delete $args->{argdefsep} if exists $args->{argdefsep};
+    my $cmd;
 
-	my @cmds = map { [ $_->render( $args  ) ] } @{ $self->cmds };
+    $argfmt->copy_from( $attr->{argfmt} ) if defined $attr->{argfmt};
+    $argfmt->copy_from( IPC::PrettyPipe::Arg::Format->new_from_hash( $attr ) );
 
-	return @cmds;
+
+    if ( $attr->{cmd}->$_isa( 'IPC::PrettyPipe::Cmd' ) ) {
+
+        $cmd = delete $attr->{cmd};
+
+        croak( "cannot specify additional arguments when passing a Cmd object\n" )
+          if keys %$attr;
+    }
+
+    else {
+
+        $cmd = IPC::PrettyPipe::Cmd->new( cmd => $attr->{cmd},
+					  argfmt => $argfmt->clone,
+					  exists $attr->{args} ? ( args => $attr->{args} ) : (),
+					);
+    }
+
+    $self->cmds->push( $cmd );
+
+    return $cmd;
 }
 
-sub _pp_cmd {
+sub ffadd {
 
-    my ( $self, $pcmd ) = @_;
+    my $self = shift;
+    my @args = @_;
 
-    # render the command so that each name/value pair is rendered
-    # as a single string
-    my @args = $pcmd->render( quote => 1, defsep => ' ' );
+    my $argfmt = $self->argfmt->clone;
 
-    return
-      join( $self->cmdoptsep . $self->optpfx,
-            $self->cmdpfx . shift( @args),
-            join( $self->optsep . $self->optpfx, @args ),
-          );
+    for ( my $idx = 0 ; $idx < @args ; $idx++ ) {
+
+        my $t = $args[$idx];
+
+        if ( $t->$_isa( 'IPC::PrettyPipe::Arg::Format' ) ) {
+
+            $t->copy_into( $argfmt );
+
+        }
+
+        elsif ( $t->$_isa( 'IPC::PrettyPipe::Cmd' ) ) {
+
+            $self->add( $t );
+
+        }
+
+        elsif ( 'ARRAY' eq ref $t ) {
+
+	    my $cmd = IPC::PrettyPipe::Cmd->new( cmd => shift( @$t ), argfmt => $argfmt->clone );
+	    $cmd->ffadd( @$t);
+
+            $self->add( $cmd );
+        }
+
+        elsif ( $t->$_isa( 'IPC::PrettyPipe::Stream' ) ) {
+
+            $self->stream( $t );
+
+        }
+
+        elsif ( !ref $t ) {
+
+
+            my $stream;
+
+            try {
+
+                my $stream = IPC::PrettyPipe::Stream->new(
+                    spec   => $t,
+                    strict => 0,
+                );
+
+                if ( $stream->requires_file ) {
+
+                    croak( "arg[$idx]: stream operator $t requires a file\n" )
+                      if ++$idx == @args;
+
+                    $stream->file( $args[$idx] );
+                }
+
+                $self->stream( $stream );
+            }
+            catch {
+
+                die $_ unless /requires a file|cannot parse/;
+
+		# FIXME: this is the "fall through" which takes care
+		# of calling with a simple string argument, which is
+		# taken to be a command to run.  It probably shouldn't
+		# be buried at this level of the code.
+
+                $self->add( cmd => $t, argfmt => $argfmt );
+            };
+
+        }
+
+        else {
+
+            croak( "arg[$idx]: unrecognized parameter to ffadd\n" );
+
+        }
+
+    }
+
 }
 
-sub pp {
+sub stream {
 
     my $self = shift;
 
-    my $pipe = join( $self->cmdsep . '|',
-                     map { $self->_pp_cmd( $_ ) } @{ $self->cmds } );
+    my $op = shift;
 
+    if ( $op->$_isa( 'IPC::PrettyPipe::Stream' ) ) {
 
+        croak( "too many arguments\n" )
+          if @_;
 
-    if ( $self->has_stderr || $self->has_stdin || $self->has_stdout ) {
+        $self->streams->push( $op );
 
-	    my @pipe = ( '(', $pipe , $self->cmdsep, ')' );
+    }
 
-	    push @pipe, $self->cmdsep, '<', $self->cmdpfx, $self->stdin
-	      if $self->has_stdin;
+    elsif ( !ref $op ) {
 
-	    push @pipe, $self->cmdsep, '>', $self->cmdpfx, $self->stdout
-	      if $self->has_stdout;
+        $self->streams->push(
+          IPC::PrettyPipe::Stream->new( op => $op, +@_ ? ( file => @_ ) : () )
+			     );
+    }
 
-	    if ( $self->has_stderr ) {
+    else {
 
-		    if ( $self->has_stdout && $self->stderr eq $self->stdout ) {
-
-			    push @pipe, $self->cmdsep, $self->cmdpfx, '2>&1';
-
-		    }
-		    else {
-
-			    push @pipe, $self->cmdsep, '2>', $self->cmdpfx, shell_quote( $self->stderr );
-
-		    }
-	    }
-
-	    $pipe = join('', @pipe);
+        croak( "illegal stream operator\n" );
 
     }
 
 
-    return $pipe;
-
+    return;
 }
 
 sub valmatch {
@@ -276,7 +356,7 @@ sub valmatch {
     my $self    = shift;
     my $pattern = shift;
 
-    return sum 0, map { $_->valmatch( $pattern ) && 1 || 0 } @{ $self->cmds };
+    return sum 0, map { $_->valmatch( $pattern ) && 1 || 0 } @{ $self->cmds->elements };
 }
 
 
@@ -313,10 +393,10 @@ sub valsubst {
     }
 
     my $match = 0;
-    foreach ( @{ $self->cmds } ) {
+    foreach ( @{ $self->cmds->elements } ) {
         $match++
           if $_->valsubst( $pattern,
-              $match == 0               ? $args->{firstvalue}
+              $match == 0 ? $args->{firstvalue}
             : $match == ( $nmatch - 1 ) ? $args->{lastvalue}
             :                             $args->{value} );
     }
@@ -324,6 +404,38 @@ sub valsubst {
     return $match;
 }
 
+sub _backend_factory {
+
+    my ( $self, $type, $req ) = ( shift, shift, shift );
+
+    my $module = compose_module_name( "IPC::PrettyPipe::$type", $req );
+
+    croak( "unknown $type ($req => $module)\n" )
+      unless defined module_path( $module );
+
+    load $module;
+
+    return $module->new( pipe => $self, @_ );
+}
+
+
+sub _storefh {
+
+    my $self = shift;
+
+    my $sfh = IO::ReStoreFH->new;
+
+    for my $stream ( @{ $self->streams->elements } ) {
+
+	my ( $sub, @fh ) = $stream->apply;
+
+	$sfh->store( $_ ) foreach @fh;
+
+	$sub->();
+    }
+
+    return $sfh;
+}
 
 1;
 
@@ -340,13 +452,15 @@ IPC::PrettyPipe - manage human readable external command execution pipelines
 
   my $pipe = new IPC::PrettyPipe;
 
-  $pipe->add( $command, @args );
-  $pipe->add( $command, $arg1, { option => value } );
+  $pipe->add( $command, %options );
+  $pipe->add( cmd => $command, %options );
+
+  $pipe->stream( $stream_op, $stream_file );
 
   $cmd = $pipe->add( $command );
   $cmd->add( $args );
 
-  $cmd->argsep( '=' );
+  print $pipe->render, "\n";
 
 =head1 DESCRIPTION
 
@@ -361,16 +475,24 @@ readable external command execution pipelines.  It does this by
 treating commands, their options, and the options' values as separate
 entitites so that it can produce nicely formatted output.
 
-There is sufficient DWIMmery to make it easy to produce pipelines.
+It is designed to be used in conjunction with other modules which
+actually execute pipelines, such as L<IPC::Run>.
 
-=head2 How it works
+This module (and its siblings B<L<IPC::PrettyPipe::Cmd>>,
+B<L<IPC::PrettyPipe::Arg>>, and B<L<IPC::PrettyPipe::Stream>>) present
+the object-oriented interface for manipulating the underlying
+infrastructure.
 
-B<IPC::PrettyPipe> manages a list of B<IPC::PrettyPipe::Cmd> objects,
-each of which also manages a list of B<IPC::PrettyPipe::Arg> objects.
+For a simpler, more intuitive means of constructing pipelines, see
+B<L<IPC::PrettyPipe::DSL>>.
 
-It is rare that one needs worry about anything but the top-level
-B<IPC::PrettyPipe> object, but access to the sub-level objects is easy
-to get.
+=head2 Pretty Printing
+
+The default B<IPC::PrettyPipe> renderer renders a pipeline as if it
+were to be fed to a POSIX shell (which can be handy for debugging
+complex pipelines).
+
+
 
 =head1 METHODS
 
@@ -378,227 +500,187 @@ to get.
 
 =item new
 
-  # create an empty pipeline
-  $pipe = IPC::PrettyPipe->new( %options );
+  # initialize the pipe with commands
+  $pipe = IPC::PrettyPipe->new( cmds => [ $cmd1, $cmd2 ], %attrs );
 
-  # positional argument interface; pass in some commands and options
-  $pipe = IPC::PrettyPipe->new( $cmd1, $cmd2, %options );
+  # initialize the pipe with a single command
+  $pipe = IPC::PrettyPipe->new( $cmd );
 
-  # named argument interface
-  $pipe = IPC::PrettyPipe->new( cmds => [ $cmd1, $cmd2 ], %options );
+  # create an empty pipeline, setting defaults
+  $pipe = IPC::PrettyPipe->new( %attrs );
 
-
-B<new> creates a new C<IPC::PrettyPipe> object.  It can create an empty
-pipe, or can be preloaded with commands.
-
+Create a new C<IPC::PrettyPipe> object. The available attributes are:
 
 =over
+
+=item cmds
+
+I<Optional>. The value should be an arrayref of commands to load into
+the pipe.  The contents of the array are passed to the B<ffadd>
+method; see it for more details.
+
+=item argpfx
 
 =item argsep
 
-This specifies the default string to separate arguments from their
-values.  If this is undefined (the default), the argument name and
-value are passed to the command separately.  The dumped output will
-use a space.
-
-New commands inherit the current value of B<argsep> string.  The
-default value may also be changed with the B<argsep> method for
-B<IPC::PrettyPipe> objects.  The separator for a given command may be
-changed with the B<argsep> method for the command.
-
+I<Optional>.  Specify the default argument prefix and separation
+attributes.  See L<IPC::PrettyPipe::Args> for more details.
 
 =back
 
-=item add( [\%attr,] $command, @arguments )
+=item B<add>
+
+  $cmd_obj = $pipe->add( $cmd );
+  $cmd_obj = $pipe->add( cmd => $cmd, %options );
 
 This creates an B<IPC::PrettyPipe::Cmd> object, adds it to the
-B<IPC::PrettyPipe> object, and returns a handle to it.  The optional hash
-may be used to set attributes for the command (see
-L<IPC::PrettyPipe::Cmd>).  The command's B<ArgSep> attribute is set to that
-of the B<IPC::PrettyPipe> object.
+B<IPC::PrettyPipe> object, and returns a handle to it.  If passed
+a single parameter, it is assumed to be a C<cmd> parameter.
 
-Arguments to the command may be specified in one of the following
-ways:
+This is a thin wrapper around the B<IPC::PrettyPipe::Cmd> constructor,
+taking the same parameters.  The only difference is that if the value
+of the C<cmd> parameter is an B<IPC::PrettyPipe::Cmd> object it
+is inserted (not copied) into the pipeline.
+
+=item B<ffadd>
+
+  $pipe->ffadd( @cmds );
+
+A more relaxed means of adding commands. C<@cmds> may contain any
+of the following items:
 
 =over
 
-=item *
+=item an B<IPC::PrettyPipe::Cmd> object
 
-As a simple string, e.g.,
+This is inserted directly into the pipeline (not copied!).
 
-	$pipe->add( 'ls', '-l' );
+=item a string
 
-This option is useful for command options which do not take an argument.
+This specifies a command name and indicates that it takes no
+arguments.  However, if it matches a stream operation (see
+L<IPC::PrettyPipe::Stream>), it will cause a new I/O stream to be
+attached to the pipeline.  If the operation requires an additional
+parameter, the next value in C<@cmds> will be used for that parameter.
 
-=item *
+=item an arrayref
 
-As a reference to a hash, e.g.,
+The first element of the array is the command name; the rest are its
+arguments; these are passed to B<IPC::PrettyPipe::Cmd::new> as the
+C<cmd> and C<args> paramters.
 
-	$pipe->add( 'tar', { -f => 'foo.tar' } );
+=item an B<IPC::PrettyPipe::DSL::Attribute::Cmd> object
 
-This method obviously is only useful for options which take an
-argument.  Multiple options may be specified in the hash.  Because it
-is a hash, the ordering of the options will not be kept as specified.
-
-=item *
-
-As a reference to an array, e.g.,
-
-	$pipe->add( 'tar', [ -f => 'foo.tar' ] );
-
-This method obviously is only useful for options which take an
-argument.  Multiple options may be specified in the array.  The ordering
-of options is retained.
-
+B<ffadd> keeps a local copy of the formatting attributes for use when
+creating new B<IPC::PrettyPipe::Cmd> objects.  The local copy may be
+modified by passing in B<IPC::PrettyPipe::DSL::Attribute::Cmd>
+objects.  This is typically only useful when using
+B<IPC::PrettyPipe::DSL>, which provides a simpler interface.
 
 =back
 
-The different methods of option specification may be mixed, e.g.,
+=item B<argpfx>
 
-	$pipe->add( 'tar',
-		    '-v',
-		    [ -f => 'foo.tar' ],
-		    { -b => 100 }
-		  );
+=item B<argsep>
 
+These methods retrieve (when called with no arguments) or modify (when
+called with an argument) the similarly named object
+attributes. Changing these affects the defaults for future command
+arguments; itq does not affect existing arguments.
 
+See L<IPC::PrettyPipe::Arg> for more information.
 
-=item argsep( $argsep )
+=item B<render>
 
-This changes the value of the B<ArgSep> attribute for commands
-subsequently added to the pipe. Existing commands should use the
-B<IPC::PrettyPipe::Cmd::argsep> method.
+  my $string = $pipe->render
 
-=item stdin( $stdin )
-
-This specifies a file to which the standard input stream of the
-pipeline will be connected. if I<$stdout> is C<undef> or unspecified,
-it cancels any value previously set.
+Return a prettified string of the pipeline.
 
 
-=item stdout( $stdout )
+=item B<stream>
 
-This specifies a file to which the standard output stream of the
-pipeline will be written. if I<$stdout> is C<undef> or unspecified, it
-cancels any value previously set.
+  $pipe->stream( $op );
+  $pipe->stream( $op, $file );
 
+Add an I/O stream to the command.  Stream operators have the same syntax
+as in L<IPC::Run>.  See L<IPC::PrettyPipe::Stream> for more information.
 
-=item stderr( $stderr )
+=item B<streams>
 
-This specifies a file to which the standard output stream of the
-pipeline will be written. if I<$stderr> is C<undef> or unspecified, it
-cancels any value previously set.
+  $streams = $pipe->streams
 
-=item dump( \%attr )
+Return the streams associated with the command as an arrayref of
+B<IPC::PrettyPipe::Stream> objects.
 
-This method returns a string containing the sequence of commands in
-the pipe. By default, this is a "pretty" representation.  The
-I<\%attr> hash may contain any of the attributes documented
-for the B<IPC::PrettyPipe::Cmd::new> method.
+=item B<valmatch>
 
+  $n = $pipe->valmatch( $pattern );
 
-=item run
+Returns the number of I<commands> with a value matching the passed
+regular expression.  (This is B<not> equal to the number of total
+I<values> which matched.  To determine this, iterate over each
+command, calling it's B<valmatch> method ).
 
-Execute the pipe.  Returns true if the pipe ran to completion.
+=item B<valsubst>
 
-=item valrep( $pattern, $value, [$lastvalue, [$firstvalue] )
+   $pipe->valsubst( $pattern, $value, %attr );
 
 Replace arguments to options whose arguments match the Perl regular
-expression, I<$pattern> with I<$value>.  If I<$lastvalue> is
-specified, the last matched argument will be replaced with
-I<$lastvalue>.  If I<$firstvalue> is specified, the first matched
-argument will be replaced with I<$firstvalue>.
+expression I<$pattern> with I<$value>.  The following attributes
+are avaliable:
 
-For example,
 
-  my $pipe = new IPC::PrettyPipe;
-  $pipe->add( 'cmd1', [ input => 'INPUT', output => 'OUTPUT' ] );
-  $pipe->add( 'cmd2', [ input => 'INPUT', output => 'OUTPUT' ] );
-  $pipe->add( 'cmd3', [ input => 'INPUT', output => 'OUTPUT' ] );
-  $pipe->valrep( 'OUTPUT', 'stdout', 'output_file' );
-  $pipe->valrep( 'INPUT', 'stdin', undef, 'input_file' );
-  print $pipe->dump, "\n"
+=over
+
+=item firstvalue
+
+The first matched argument will be replaced with this value
+
+=item lastvalue
+
+The last matched argument will be replaced with this value.
+
+=back
+
+Note that matching is done on a per-command basis, not per-argument
+basis, so that if a command has multiple matching values, they
+will all use the same replacement string.
+
+Here's an example where the commands use parameters C<input> and
+C<output> to indicate where they should write.  The strings "stdout"
+and "stdin" are special and indicate the standard streams. Using
+B<valsubst> allows an easy update of the pipeline after construction
+to specify the correct streams.
+
+  $p = new IPC::PrettyPipe;
+  $p->add( cmd => 'cmd1',
+           args => [ [ input => 'INPUT', output => 'OUTPUT' ] ] );
+  $p->add( cmd => 'cmd2',
+           args => [ [ input => 'INPUT', output => 'OUTPUT' ] ] );
+  $p->add( cmd => 'cmd3',
+           args => [ [ input => 'INPUT', output => 'OUTPUT' ] ] );
+  $p->valsubst( qr/OUTPUT/, 'stdout', lastvalue => 'output_file' );
+  $p->valsubst( qr/INPUT/, 'stdin', firstvalue => 'input_file' );
+  print $p->render, "\n"
 
 results in
 
-          cmd1 \
-  	  input=input_file \
-            output=stdout \
-  |       cmd2 \
-            input=stdin \
-            output=stdout \
-  |       cmd3 \
-            input=stdin \
-            output=output_file
+	cmd1 \
+  	  input input_file \
+  	  output stdout \
+  |	cmd2 \
+  	  input stdin \
+  	  output stdout \
+  |	cmd3 \
+  	  input stdin \
+  	  output output_file
 
 =back
 
-=head1 EXAMPLES
-
-
-Sometimes it's not possible to determine beforehand which command in a
-pipeline will be the final one in the pipe; thus, it's not possible to
-specify which command actually writes the output file until the very
-end. In the following example the programs recognize the token
-C<stdout> to refer to the standard output stream; this is specific to
-their implementation.
-
-  my $pipe = new IPC::PrettyPipe;
-  $pipe->add( 'genphot',
-  	    { output	=> 'OUTPUT',
-  	      photdens  => 0.001 }
-  	  );
-
-  $pipe->add( 'bp2rdb',
-  	    { input     => 'stdin',
-  	      output    => 'OUTPUT' }
-  	    )
-  	if $convert_to_rdb;
-
-  $pipe->valrep( 'OUTPUT', 'stdout', 'rays.out' );
-
-  print $pipe->dump, "\n"
-
-This results in:
-
-          genphot \
-            output=stdout \
-            photdens=0.001 \
-  |       bp2rdb \
-            input=stdin \
-            output=rays.out
-
-
-If programs can write to C<stdout> directly, one can use the B<stdout()>
-(and likewise B<stderr()> method), if need be:
-
-  my $pipe = new IPC::PrettyPipe;
-  $pipe->add( 'ls' );
-  $pipe->add( 'wc' );
-  $pipe->stdout( 'line_count' );
-  print $pipe->dump, "\n";
-
-This results in:
-
-          ls \
-  |       wc \
-  >       line_count
-
-To redirect stderr, add the following line,
-
-  $pipe->stderr( 'error' );
-
-which results in a dump (equivalent shell command) of :
-
-  (       ls \
-  |       wc \
-  >       line_count \
-  ) \
-  2>      error
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2006 Smithsonian Astrophysical Observatory
+Copyright 2012 Smithsonian Astrophysical Observatory
 
 This software is released under the GNU General Public License.  You
 may find a copy at

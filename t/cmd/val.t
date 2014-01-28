@@ -8,8 +8,7 @@ use IPC::PrettyPipe::Cmd;
 use Test::More;
 use Test::Exception;
 
-sub new { IPC::PrettyPipe::Cmd->new( @_ ); }
-
+sub new { IPC::PrettyPipe::Cmd->new( cmd => shift(), ( @_ ? (args => \@_) : () )); }
 
 lives_and {
     is(
@@ -45,7 +44,7 @@ lives_and {
 	my $cmd = new( 'ls', [ '-a', '%OUTPUT%' ] );
 	$cmd->valsubst( qr/%OUTPUT%/, 'foo',);
 
-	is( $cmd->args->[0]->value, 'foo' );
+	is( $cmd->args->elements->[0]->value, 'foo' );
 }
 'valsubst: match';
 
@@ -56,8 +55,8 @@ lives_and {
 	              lastvalue => 'last'
 	            );
 
-	is( $cmd->args->[0]->value, 'foo' );
-	is( $cmd->args->[1]->value, 'last' );
+	is( $cmd->args->elements->[0]->value, 'foo' );
+	is( $cmd->args->elements->[1]->value, 'last' );
 }
 'valsubst: match, lastvalue, nmatch = 2';
 
@@ -72,9 +71,9 @@ lives_and {
 			lastvalue => 'last',
 	            );
 
-	is( $cmd->args->[0]->value, 'first' );
-	is( $cmd->args->[1]->value, 'middle' );
-	is( $cmd->args->[2]->value, 'last' );
+	is( $cmd->args->elements->[0]->value, 'first' );
+	is( $cmd->args->elements->[1]->value, 'middle' );
+	is( $cmd->args->elements->[2]->value, 'last' );
 }
 'valsubst: match, firstvalue + lastvalue, nmatch = 3';
 
@@ -85,8 +84,8 @@ lives_and {
 	              lastvalue => 'last'
 	            );
 
-	is( $cmd->args->[0]->value, 'last' );
-	is( $cmd->args->[1]->value, '%INPUT%' );
+	is( $cmd->args->elements->[0]->value, 'last' );
+	is( $cmd->args->elements->[1]->value, '%INPUT%' );
 }
 'valsubst: match, lastvalue, nmatch = 1';
 
@@ -98,8 +97,8 @@ lives_and {
 	                 ),
 	     1);
 
-	is( $cmd->args->[0]->value, 'first' );
-	is( $cmd->args->[1]->value, '%INPUT%' );
+	is( $cmd->args->elements->[0]->value, 'first' );
+	is( $cmd->args->elements->[1]->value, '%INPUT%' );
 
 }
 'valsubst: match, firstvalue, nmatch = 1';
@@ -111,8 +110,8 @@ lives_and {
 	                     firstvalue => 'first',
 	                 ),
 	     2);
-	is( $cmd->args->[0]->value, 'first' );
-	is( $cmd->args->[1]->value, 'foo' );
+	is( $cmd->args->elements->[0]->value, 'first' );
+	is( $cmd->args->elements->[1]->value, 'foo' );
 
 }
 'valsubst: match, firstvalue';
@@ -125,8 +124,8 @@ lives_and {
 	                firstvalue => 'first',
 	                lastvalue => 'last'
 	              );
-	is( $cmd->args->[0]->value, 'first' );
-	is( $cmd->args->[1]->value, 'last' );
+	is( $cmd->args->elements->[0]->value, 'first' );
+	is( $cmd->args->elements->[1]->value, 'last' );
 
 }
 'valsubst: match, firstvalue, lastvalue';
@@ -138,7 +137,7 @@ lives_and {
 
 	$cmd->valsubst( qr/%OUTPUT%/, 'foo', { lastvalue => 'bar' } );
 
-	is( $cmd->args->[0]->value, 'bar' );
+	is( $cmd->args->elements->[0]->value, 'bar' );
 }
 'valsubst: match, hash attr';
 
@@ -149,7 +148,7 @@ lives_and {
 	is( $cmd->valsubst( qr/%OUTPUT%/, 'foo' ),
 	    0 );
 
-	is( $cmd->args->[0]->value, '%INPUT%' );
+	is( $cmd->args->elements->[0]->value, '%INPUT%' );
 }
 'valsubst: no match';
 

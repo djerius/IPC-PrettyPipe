@@ -1,6 +1,6 @@
 # --8<--8<--8<--8<--
 #
-# Copyright (C) 2012 Smithsonian Astrophysical Observatory
+# Copyright (C) 2013 Smithsonian Astrophysical Observatory
 #
 # This file is part of IPC::PrettyPipe
 #
@@ -21,192 +21,255 @@
 
 package IPC::PrettyPipe::Stream;
 
-use strict;
-use warnings;
 use Carp;
-
-use Params::Check qw[ check ];
-
-use IPC::PrettyPipe::Check;
-use String::ShellQuote qw[ shell_quote ];
-
-use parent 'Exporter';
-
-our @EXPORT_OK = qw[ parse_op ];
 
 use Moo;
 use MooX::Types::MooseLike::Base ':all';
 
+use Params::Check qw[ check ];
+
+use IPC::PrettyPipe::Check;
+use IPC::PrettyPipe::Stream::Utils qw[ parse_spec ];
+
+use IO::ReStoreFH;
+use POSIX ();
+use Fcntl qw[ O_RDONLY O_WRONLY O_CREAT O_TRUNC O_APPEND ];
+
+with 'IPC::PrettyPipe::Queue::Element';
+
+my %fh_map = (
+    0 => *STDIN,
+    1 => *STDOUT,
+    2 => *STDERR
+);
+
+my %op_map = (
+
+    '<'  => O_RDONLY,
+    '>'  => O_WRONLY | O_CREAT | O_TRUNC,
+    '>>' => O_WRONLY | O_CREAT | O_APPEND
+
+);
+
 has N => (
-    is => 'rwp',
+    is        => 'rwp',
     predicate => 1,
-    init_arg => undef,
+    init_arg  => undef,
 );
 has M => (
-    is => 'rwp',
+    is        => 'rwp',
     predicate => 1,
-    init_arg => undef,
+    init_arg  => undef,
 );
 has Op => (
-    is => 'rwp',
+    is       => 'rwp',
     init_arg => undef,
 );
 
-has op => (
-    is        => 'rwp',
-    isa       => Str,
-    required  => 1,
+has spec => (
+    is       => 'rwp',
+    isa      => Str,
+    required => 1,
 );
 
 has file => (
-    is      => 'rwp',
+    is        => 'rw',
     isa       => Str,
     predicate => 1,
 );
 
-has sep => (
-    is        => 'ro',
-    isa       => ArgSep,
-    default => sub { undef },
-    predicate => 1,
+has type => (
+    is       => 'rwp',
+    isa      => Str,
+    init_arg => undef,
 );
+
+has requires_file => (
+    is       => 'rwp',
+    init_arg => undef,
+);
+
+has strict => (
+    is      => 'ro',
+    isa     => Bool,
+    default => sub { 1 } );
 
 sub BUILDARGS {
 
-	my $class = shift;
+    my $class = shift;
 
-	return $_[0] if @_ == 1 && 'HASH' eq ref $_[0];
+    if ( @_ == 1 ) {
 
-	return {@_} if $_[0] eq 'op' or $_[0] eq 'file';
+        return $_[0] if 'HASH' eq ref( $_[0] );
 
-	my %args;
-	$args{op} = shift if @_;
-	$args{file} = shift if @_;
+        return { spec => $_[0][0], file => $_[0][1] }
+          if 'ARRAY' eq ref( $_[0] ) && @{ $_[0] } == 2;
 
-	croak( __PACKAGE__, ': ', "too many arguments to new\n" )
-	  if @_;
+        return { spec => $_[0] };
 
-	return \%args;
+    }
+
+    return {@_};
+
 }
 
 sub BUILD {
 
     my $self = shift;
 
-    my $opc = parse_op( $self->op );
+    ## no critic (ProhibitAccessOfPrivateData)
 
-    croak( __PACKAGE__, ': ', "cannot parse stream operator: ", $self->op )
-      unless keys %$opc;
+    my $opc = parse_spec( $self->spec );
 
-    $self->${\"_set_$_"}($opc->{$_})
+    croak( __PACKAGE__, ': ', "cannot parse stream specification: ", $self->spec )
+      unless defined $opc->{type};
+
+    $self->_set_requires_file( $opc->{param} );
+    $self->_set_type( $opc->{type} );
+
+    $self->${ \"_set_$_" }( $opc->{$_} )
       for grep { exists $opc->{$_} } qw[ N M Op ];
 
-    croak( __PACKAGE__, ': ', "stream operator ", $self->op, "requires a file\n" )
-      if $opc->{param} && ! $self->has_file;
+
+    if ( $self->strict ) {
+
+        croak( __PACKAGE__, ': ', "stream specification ",
+            $self->spec, "requires a file\n" )
+          if $self->requires_file && !$self->has_file;
+
+        croak( __PACKAGE__, ': ', "stream specification ",
+            $self->spec, "should not have a file\n" )
+          if !$self->requires_file && $self->has_file;
+
+    }
 
     return;
 }
 
-sub parse_op {
 
-    my $op = shift;
+sub _redirect {
 
-    # parse stream operator; use IPC::Run's operator syntax
+    my ( $self, $N ) = @_;
 
-    $op =~ /^(?:
-    # <, N<
-    # >, N>
-    # >>, N>>
-    # <pty, N<pty
-    # >pty, N>pty
-    # <pipe, N<pipe
-    # >pipe, N>pipe
+    my $file = $self->file;
 
-      (?'first'
-          (?'N' \d+ (?!<<) )?  # don't match N<<
-          (?'Op'
-              (?: [<>]{1,2} )
-            | [<>] (?:pty|pipe)
-          )
-       )
+    my $sub;
 
-    # >&, &>
-    | (?'stdout_stderr'
-          (?'Op' >& | &> )
-      )
+    if ( defined $N ) {
 
-    # N<&M
-    # N<&-
-    | (?:
-          (?'N'  \d+     )
-          (?'Op' <&      )
-          (?'M'  \d+ | - )
-       )
+        my $op = $self->Op;
 
-    # M>&N
-    | (?:
-          (?'M'  \d+ )
-          (?'Op' >&  )
-          (?'N'  \d+ )
-      )
-      )$/x ;
+        $sub = sub {
+            open( $N, $op, $file ) or die( "unable to open ", $file, ": $!\n" );
+        };
+    }
 
-    # force a copy of the hash; it's magical and a simple return
-    # of the elements doesn't work.
-    my %opc = map { $_ => $+{$_} } grep { exists $+{$_} } qw[ N M Op ];
+    else {
 
-    # fill in default value for N & M for stdin & stdout
-    $opc{N} = substr($opc{Op},0,1) eq '<' ? 0 : 1
-      if exists $+{first} && ! defined $opc{N};
+        $N = $self->N;
+        my $op = $op_map{ $self->Op }
+          // croak( "error: unrecognized operator: ", $self->Op, "\n" );
 
-    $opc{param}++
-      if $+{first} || $+{'stdout_stderr'};
+        $sub = sub {
+            my $nfd = POSIX::open( $file, $op, oct(644) )
+              or croak( 'error opening', $file, ": $!\n" );
+            POSIX::dup2( $nfd, $N )
+              or croak( "error in dup2( $nfd, $N ): $!\n" );
+            POSIX::close( $nfd );
+        };
 
-    return \%opc;
+    }
+
+    return $sub, $N;
 }
 
-sub render {
+sub _dup {
 
-    my $self = shift;
+    my ( $self, $N, $M ) = @_;
 
-    ## no critic (ProhibitAccessOfPrivateData)
+    $M //= $self->M;
 
-    my $args = check( {
-            sep     => { allow   => CheckArgSep },
-            defsep  => { allow   => CheckArgSep },
-            quote   => { default => 0,           allow   => CheckBool },
-            flatten => { allow   => CheckBool,   default => 0 },
-        },
-        ( 'HASH' eq ref $_[0] ? $_[0] : {@_} )
-    ) or croak( Params::Check::last_error );
+    my $sub;
 
-    if ( $self->has_file ) {
+    # if $N is a known filehandle, we're in luck
+    if ( defined $N ) {
 
-        ## no critic (ProhibitAccessOfPrivateData)
-
-	    my $file = $args->{quote} ? shell_quote( $self->file ) : $self->file;
-
-	    my $sep = $args->{sep} // $self->sep // $args->{defsep};
-
-	    my @retval =
-	      defined $sep
-		? $self->op . $sep . $file
-		: ( $self->op, $file );
-
-	    return
-	        1 == @retval       ? $retval[0]
-	        : $args->{flatten} ? @retval
-	        :                   \@retval;
+        $sub = sub {
+            open( $N, '>&', $M )
+              or die( "error in open($N >& $M): $!\n" );
+        };
 
     }
 
     else {
 
-	    return $self->op;
+        $N = $self->N;
+        $M = $self->M;
+
+        $sub = sub {
+            POSIX::dup2( $N, $M )
+              or die( "error in dup2( $N, $M ): $!\n" );
+        };
+
     }
 
-    croak;
+    return $sub, $N;
 }
+
+sub _redirect_stdout_stderr {
+
+	my $self = shift;
+
+	( undef, my $sub_redir ) = $self->_redirect( *STDOUT );
+	( undef, my $sub_dup   ) = $self->_dup( *STDERR, *STDOUT );
+	return sub { $sub_redir->(), $sub_dup->() },  *STDOUT, *STDERR;
+
+}
+
+sub _close {
+
+    my ( $self, $N ) = @_;
+
+    my $sub;
+
+    if ( defined $N ) {
+
+        $sub = sub { close( $N ) or die( "error in closing $N: $!\n" ); };
+
+    }
+
+    else {
+
+        $N = $self->N;
+
+        $sub = sub {
+            POSIX::close( $N )
+              or die( "error in closing $N: $!\n" );
+        };
+
+    }
+
+    return $sub, $N;
+
+}
+
+sub apply {
+
+	my $self = shift;
+
+	my ( $N, $M ) =  do {
+
+		no warnings 'uninitialized';
+
+		map { $fh_map{$_} } $self->N, $self->M;
+
+	};
+
+	my $mth = '_' . $self->type;
+	return $self->$mth( $N, $M );
+}
+
+
 
 1;
 
@@ -215,54 +278,25 @@ __END__
 
 =head1 NAME
 
-IPC::PrettyPipe::Stream - An I/O stream for a IPC::PrettyPipe::Cmd command
+IPC::PrettyPipe::Stream - An I/O stream for an IPC::PrettyPipe::Cmd command
 
 =head1 SYNOPSIS
 
   use IPC::PrettyPipe::Stream;
 
-  # positional arguments
-  $stream  = IPC::PrettyPipe::Stream->new( $op );
-  $stream = IPC::PrettyPipe::Stream->new( $op, $file );
+  # standard constructor
+  $stream = IPC::PrettyPipe::Stream->new( spec => $spec, %attr );
+  $stream = IPC::PrettyPipe::Stream->new( spec => $spec, file => $file, %attr );
 
-  # named arguments; allows specifying other attributes
-  # note enclosure in hash
-  $stream = IPC::PrettyPipe::Stream->new( { op=> $op } );
-  $stream = IPC::PrettyPipe::Stream->new( { op => $op,
-                                            file => $file } );
-
-  # return a rendered argument
-  $stream->render;
+  # concise constructors
+  $stream = IPC::PrettyPipe::Stream->new( $spec );
+  $stream = IPC::PrettyPipe::Stream->new( [ $spec, $file ] );
 
 =head1 DESCRIPTION
 
-B<IPC::PrettyPipe::Stream> objects are containers for I/O streams
-attached to commands in an B<IPC::PrettyPipe::Cmd> object.  They are
-typically automatically created by the B<IPC::PrettyPipe::Cmd> object.
-
-The stream specification is divided into a stream operator and an
-optional file.  Stream operators have the same syntax as those in L<IPC::Run>.
-
-The operator is parsed into three components (based upon the B<IPC::Run> syntax):
-
-=over
-
-=item N
-
-The operator's primary fd
-
-=item Op
-
-The operator stripped of fds
-
-=item M
-
-The operator's secondary fd; usually the fd which is being duplicated
-or C<-> if the primary fd is to be closed.
-
-=back
-
-These are available via the B<N>, B<Op> and B<M> methods.
+B<IPC::PrettyPipe::Stream> objects provide a management interface for
+I/O streams attached to either B<IPC::PrettyPipe> or
+B<IPC::PrettyPipe::Cmd> objects.
 
 =head1 METHODS
 
@@ -270,134 +304,88 @@ These are available via the B<N>, B<Op> and B<M> methods.
 
 =item B<new>
 
-  # positional interface
-  $stream = IPC::PrettyPipe::Stream->new( $op );
-  $stream = IPC::PrettyPipe::Stream->new( $op, $file );
-
-  # named interface; may provide additional attributes
-  $stream = IPC::PrettyPipe::Stream->new( op => $op, file => $file );
+  # named parameters; may provide additional attributes
+  $stream = IPC::PrettyPipe::Stream->new( spec => $spec, file => $file, %attr );
   $stream = IPC::PrettyPipe::Stream->new( \%attr );
 
-Objects may be created either with a simplified positional interface, or with
-a named argument interface, which provides additonal attributes.
+  # concise interface
+  $stream = IPC::PrettyPipe::Stream->new( $spec );
+  $stream = IPC::PrettyPipe::Stream->new( [ $spec, $file ] );
+
 
 The available attributes are:
 
 =over
 
-=item C<op>
+=item C<spec>
 
-A stream operator.
+A stream specification. See L<IPC::PrettyPipe::Stream::Utils> for more
+information.
 
 =item C<file>
 
-The optional file attached to the stream. If the stream is a
-redirection then no file is required.
-
-=item C<sep>
-
-A string to insert between the operator and file when rendering.  This
-defaults to C<undef>, indicating that they are treated as separate
-entitites.
+The optional file attached to the stream. A file is
+not needed if the specification is for a redirection or a close.
 
 =back
 
-=item B<render>
+=item B<spec>
 
-  $rendered_stream = $stream->render( %options )
+  $spec = $stream->spec;
 
-Render the stream.  If the stream's C<sep> attribute is defined, B<render>
-returns a string which looks like:
-
-  $op . $sep . $file
-
-If C<sep> is not defined, it returns an array ref which looks like
-
-  [ $op, $file ]
-
-unless the C<flatten> option is specified, in which case it returns a list
-
-  $op, $file
-
-If the stream has no file,
-
-  $op
-
-The available options are:
-
-=over
-
-=item C<sep>
-
-Override the existing value of the C<sep> attribute.
-
-=item C<defsep>
-
-Override the existing value of the C<sep> attribute, but only if it
-was C<undef>. Quoting is also affected; see below.
-
-=item C<quote>
-
-Quote the rendered stream so that it's contents will survive parsing
-by a shell (currently uses L<String::ShellQuote>).  Only the file is quoted.
-
-=item C<flatten>
-
-Return a list rather than an arrayref if C<sep> is undefined and the
-stream has a file.
-
-=back
-
-=item B<op>
-
-The operator passed in to the constructor
+Retrieve the specification passed in to the constructor.
 
 =item B<file>
 
+  $file = $stream->file;
+
+Retrieve the file passed in to the constructor (if one was).
+
 =item B<has_file>
 
-The first returns the file passed in to the constructor (if one was).
-The second returns true if a file was passed to the constructor.
+  $bool = $stream->has_file;
 
-=item B<N>
+Returns true if a file was passed to the constructor.
 
 =item B<Op>
 
+=item B<N>
+
 =item B<M>
 
-The components of the operator.
+  $Op = $stream->Op;
+  $N  = $stream->N;
+  $M  = $stream->M;
+
+Retrieve the components of the specification.
 
 =item B<has_N>
 
 =item B<has_M>
 
-These return true if the stream operator contained the associated component.
+  $bool = $stream->has_N;
+  $bool = $stream->has_M;
 
-=back
+Return true if the stream specification contained the associated
+component.
 
-=head1 FUNCTIONS
 
-B<IPC::PrettyPipe::Stream> exports the following functions upon request:
+=item B<apply>
 
-=over
+  ( $sub, @fh ) = $stream->apply;
 
-=item B<parse_op>
-
-  $op_components = parse_op( $op );
-
-Given an L<IPC::Run> compatible stream operator, parse it into
-components C<Op>, C<N>, and C<M>.  Returns a hashref with the
-information indexed by the component names.
-
-If the operator indicates that additional parameters are required
-(such as the name of a file to be read or written to), the attribute
-C<param> will be set.
+Returns a subroutine which will implement the stream operations and
+and a list of filehandles or descriptors which would be affected.
+This routine is used by backend wrappers in conjunction with
+B<IPC::ReStoreFH> to handle pipe level stream operations (rather than
+command stream operations, which are done by the actual backend
+modules).
 
 =back
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2012 Smithsonian Astrophysical Observatory
+Copyright 2013 Smithsonian Astrophysical Observatory
 
 This software is released under the GNU General Public License.  You
 may find a copy at
