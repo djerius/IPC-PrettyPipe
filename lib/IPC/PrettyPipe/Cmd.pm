@@ -23,22 +23,21 @@ package IPC::PrettyPipe::Cmd;
 
 use Carp;
 
-use List::Util qw[ sum ];
+use List::Util qw[ sum pairs ];
 use Scalar::Util qw[ blessed ];
-use Params::Check qw[ check ];
 
 use Try::Tiny;
 
 use Safe::Isa;
 
-use IPC::PrettyPipe::Check;
 use IPC::PrettyPipe::Arg;
 use IPC::PrettyPipe::Stream;
 
 use Moo;
-use MooX::Types::MooseLike::Base ':all';
+use Types::Standard -all;
+use Type::Params qw[ validate ];
 
-
+use IPC::PrettyPipe::Types -all;
 use IPC::PrettyPipe::Queue;
 use IPC::PrettyPipe::Arg::Format;
 
@@ -49,8 +48,7 @@ IPC::PrettyPipe::Arg::Format
 
 has cmd => (
     is       => 'ro',
-    isa      => sub { defined $_[0] && is_Str($_[0])
-			or die( "must be a defined scalar\n" ); },
+    isa      => Str,
     required => 1,
 );
 
@@ -58,15 +56,8 @@ has cmd => (
 has _init_args => (
     is       => 'ro',
     init_arg => 'args',
-    coerce   => sub {
-        ( is_Str( $_[0] ) || $_[0]->$_isa( 'IPC::PrettyPipe::Arg' ) )
-          ? [ $_[0] ]
-          : $_[0];
-    },
-    isa => sub {
-        die( "args must be a scalar or list\n" )
-          unless is_ArrayRef( $_[0] );
-    },
+    coerce   =>  AutoArrayRef->coercion,
+    isa =>  ArrayRef,
     predicate => 1,
     clearer   => 1,
 );
@@ -94,17 +85,19 @@ sub BUILDARGS {
 
     my $class = shift;
 
-    if ( @_ == 1 ) {
+    my $args
+      = @_ == 1
+      ? (
+        'HASH' eq ref( $_[0] )        ? $_[0]
+        : 'ARRAY' eq ref( $_[0] )
+          && @{ $_[0] } == 2          ? { cmd => $_[0][0], args => $_[0][1] }
+        :                               { cmd => $_[0] } 
+	)
+      : {@_};
 
-	    return $_[0] if 'HASH' eq ref( $_[0] );
-
-	    return { cmd => $_[0][0], args => $_[0][1] }
-	      if 'ARRAY' eq ref($_[0]) && @{$_[0]} == 2;
-
-	    return { cmd => $_[0] };
-
-    }
-    return { @_ };
+    delete @{$args}{ grep { ! defined $args->{$_} }  keys %$args };
+    $DB::single=1;
+    return $args;
 }
 
 
@@ -134,14 +127,14 @@ sub add {
 
     my $argfmt_attrs = IPC::PrettyPipe::Arg::Format->shadowed_attrs;
 
-    my $attr = check( {
-            arg   => { allow => CheckArg, required => 1, },
-            value => { allow => CheckStr, },
-	    argfmt   => { allow => CheckArgFmt },
-            ( map { $_ => {} } keys %{ $argfmt_attrs } ),
-        },
-        ( 'HASH' eq ref $_[0] ? $_[0] : {@_} )
-    ) or croak( __PACKAGE__, "::add ", Params::Check::last_error() );
+    my ( $attr ) = validate(
+        \@_,
+        slurpy Dict [
+            arg    => Str | Arg | ArrayRef | HashRef,
+            value  => Optional [Str],
+            argfmt => Optional [ InstanceOf ['IPC::PrettyPipe::Arg::Format'] ],
+            ( map { $_ => Optional [Str] } keys %{$argfmt_attrs} ),
+        ] );
 
     my $arg = $attr->{arg};
     my $ref = ref $arg;
@@ -168,12 +161,17 @@ sub add {
 
     elsif ( 'ARRAY' eq $ref ) {
 
-        for ( my $idx = 0 ; $idx < @$arg ; $idx += 2 ) {
+	croak( "missing value for argument ", $arg->[-1] )
+	  if  @$arg % 2;
+
+	foreach ( pairs @$arg ) {
+
+	    my ( $name, $value ) = @$_;
 
             $self->args->push(
                 IPC::PrettyPipe::Arg->new(
-                    name  => $arg->[$idx],
-                    value => $arg->[ $idx + 1 ],
+                    name  => $name,
+                    value => $value,
                     fmt   => $argfmt->clone
                 ) );
 
@@ -314,34 +312,34 @@ sub valmatch {
 }
 
 sub valsubst {
-    my ( $self, $pattern, $value ) = ( shift, shift, shift );
+    my $self = shift;
 
-    my %args = ( ref $_[0] ? %{ $_[0] } : @_ );
-    $args{pattern} = $pattern;
-    $args{value}   = $value;
+    my @args = ( shift, shift, @_ > 1 ? { @_ } : @_ );
+
 
     ## no critic (ProhibitAccessOfPrivateData)
 
-    my $args = check( {
-            pattern    => { required => 1, allow => CheckRegexp },
-            value      => { required => 1, allow => CheckStr },
-            lastvalue  => { allow    => CheckStr },
-            firstvalue => { allow    => CheckStr },
-        },
-        \%args
-    ) or croak( __PACKAGE__, 'valsubst: ', Params::Check::last_error );
+    my ( $pattern, $value, $args ) =
+      validate( \@args,
+		RegexpRef,
+		Str,
+		Optional[ Dict[
+			    lastvalue  => Optional[ Str ],
+			    firstvalue => Optional[ Str ]
+			   ] ],
+	      );
 
-    my $nmatch = $self->valmatch( $args->{pattern} );
+    my $nmatch = $self->valmatch( $pattern );
 
     if ( $nmatch == 1 ) {
 
-        $args->{lastvalue} //= $args->{firstvalue} // $args->{value};
+        $args->{lastvalue} //= $args->{firstvalue} // $value;
         $args->{firstvalue} //= $args->{lastvalue};
 
     }
     else {
-        $args->{lastvalue}  ||= $args->{value};
-        $args->{firstvalue} ||= $args->{value};
+        $args->{lastvalue}  ||= $value;
+        $args->{firstvalue} ||= $value;
     }
 
     my $match = 0;
@@ -351,7 +349,7 @@ sub valsubst {
           if $_->valsubst( $pattern,
               $match == 0 ? $args->{firstvalue}
             : $match == ( $nmatch - 1 ) ? $args->{lastvalue}
-            :                             $args->{value} );
+            :                             $value );
     }
 
     return $match;

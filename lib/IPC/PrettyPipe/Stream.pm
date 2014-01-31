@@ -24,11 +24,9 @@ package IPC::PrettyPipe::Stream;
 use Carp;
 
 use Moo;
-use MooX::Types::MooseLike::Base ':all';
 
-use Params::Check qw[ check ];
+use Types::Standard qw[ Bool Str ];
 
-use IPC::PrettyPipe::Check;
 use IPC::PrettyPipe::Stream::Utils qw[ parse_spec ];
 
 use IO::ReStoreFH;

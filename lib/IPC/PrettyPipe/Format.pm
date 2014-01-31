@@ -27,8 +27,6 @@ use Moo::Role;
 use Try::Tiny;
 use Module::Load;
 
-use IPC::PrettyPipe::Check;
-
 with 'MooX::Attributes::Shadow::Role';
 
 requires 'copy_into';

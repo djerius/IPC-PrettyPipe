@@ -23,22 +23,18 @@ package IPC::PrettyPipe::Arg;
 
 use Carp;
 
-use Params::Check qw[ check ];
-
-use IPC::PrettyPipe::Check;
-
 use Moo;
-use MooX::Types::MooseLike::Base ':all';
+use Types::Standard qw[ Str ];
 
 has name => (
     is       => 'ro',
-    isa      => Compose( Defined, Str ),
+    isa      => Str,
     required => 1,
 );
 
 has value => (
     is        => 'rwp',
-    isa       => Compose( Defined, Str ),
+    isa       => Str,
     predicate => 1,
 );
 

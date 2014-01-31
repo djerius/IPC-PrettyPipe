@@ -28,7 +28,7 @@ requires 'Module::Load';
 requires 'Module::Path';
 requires 'Module::Runtime';
 requires 'Moo' => '1.001000';
-requires 'MooX::Types::MooseLike' => 0.11;
+requires 'Type::Tiny' => 0.038;
 requires 'MooX::Attributes::Shadow';
 requires 'Params::Check';
 requires 'Safe::Isa';

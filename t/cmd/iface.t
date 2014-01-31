@@ -227,14 +227,14 @@ throws_ok {
 
     $cmd->add( arg => sub { } );
 }
-qr/invalid type/, 'add: bad argument';
+qr/did not pass type constraint/, 'add: bad argument';
 
 throws_ok {
     my $cmd = new( cmd => 'ls' );
 
     $cmd->add( arg => ['l'] );
 }
-qr/invalid type/, 'add array: not enough elements';
+qr/missing value/, 'add array: not enough elements';
 
 
 

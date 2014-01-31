@@ -3,7 +3,7 @@ package IPC::PrettyPipe::Execute::IPC::Run;
 use 5.10.0;
 
 use Moo;
-use MooX::Types::MooseLike::Base ':all';
+use Types::Standard qw[ InstanceOf ];
 
 use Try::Tiny;
 use IPC::Run ();

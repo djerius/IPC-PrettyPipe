@@ -25,8 +25,7 @@ use Moo;
 
 use Carp;
 
-use IPC::PrettyPipe::Check;
-use MooX::Types::MooseLike::Base ':all';
+use Types::Standard qw[ Str ];
 
 with 'IPC::PrettyPipe::Format';
 
@@ -41,7 +40,7 @@ has pfx => (
 
 has sep => (
     is        => 'rw',
-    isa       => ArgSep,
+    isa       => Str,
     clearer   => 1,
     predicate => 1,
 );

@@ -32,15 +32,15 @@ use Module::Runtime 'compose_module_name';
 use Safe::Isa;
 use Try::Tiny;
 
-use Params::Check qw[ check ];
+use Types::Standard -all;
+use Type::Params qw[ validate ];
 
 use Moo;
 use Moo::Role ();
-use MooX::Types::MooseLike::Base ':all';
 
+use IPC::PrettyPipe::Types -all;
 
 use IPC::PrettyPipe::Cmd;
-use IPC::PrettyPipe::Check;
 use IPC::PrettyPipe::Queue;
 use IPC::PrettyPipe::Arg::Format;
 
@@ -65,15 +65,8 @@ has streams => (
 has _init_cmds => (
     is       => 'ro',
     init_arg => 'cmds',
-    coerce   => sub {
-        ( is_Str( $_[0] ) || $_[0]->$_isa( 'IPC::PrettyPipe::Cmd' ) )
-          ? [ $_[0] ]
-          : $_[0];
-    },
-    isa => sub {
-        die( "args must be a scalar or list\n" )
-          unless 'ARRAY' eq ref( $_[0] );
-    },
+    coerce   => AutoArrayRef->coercion,
+    isa => ArrayRef,
     default   => sub { [] },
     predicate => 1,
     clearer   => 1,
@@ -200,14 +193,15 @@ sub add {
 
     my $argfmt_attrs = IPC::PrettyPipe::Arg::Format->shadowed_attrs;
 
-    my $attr = check( {
-            cmd    => { required => 1 },
-	    args   => {},
-	    argfmt   => { allow => CheckArgFmt },
-            ( map { $_ => {} } keys %{ $argfmt_attrs } ),
-        },
-        ( 'HASH' eq ref $_[0] ? $_[0] : {@_} )
-    ) or croak( __PACKAGE__, "::arg ", Params::Check::last_error() );
+    my ( $attr ) = validate(
+        \@_,
+        slurpy Dict [
+            cmd    => Str | Cmd,
+	    args   => Optional,
+            argfmt => Optional [ InstanceOf ['IPC::PrettyPipe::Arg::Format'] ],
+            ( map { $_ => Optional [Str] } keys %{$argfmt_attrs} ),
+        ] );
+
 
     my $cmd;
 
@@ -362,34 +356,31 @@ sub valmatch {
 
 sub valsubst {
 
-    my ( $self, $pattern, $value ) = ( shift, shift, shift );
+    my $self = shift;
 
-    my %args = ( ref $_[0] ? %{ $_[0] } : @_ );
-    $args{pattern} = $pattern;
-    $args{value}   = $value;
+    my @args = ( shift, shift, @_ > 1 ? { @_ } : @_ );
 
-    ## no critic (ProhibitAccessOfPrivateData)
-
-    my $args = check( {
-            pattern    => { required => 1, allow => CheckRegexp },
-            value      => { required => 1, allow => CheckStr },
-            lastvalue  => { allow    => CheckStr },
-            firstvalue => { allow    => CheckStr },
-        },
-        \%args
-    ) or croak( __PACKAGE__, ': ', Params::Check::last_error );
+    my ( $pattern, $value, $args ) =
+      validate( \@args,
+		RegexpRef,
+		Str,
+		Optional[ Dict[
+			    lastvalue  => Optional[ Str ],
+			    firstvalue => Optional[ Str ]
+			   ] ],
+	      );
 
     my $nmatch = $self->valmatch( $pattern );
 
     if ( $nmatch == 1 ) {
 
-        $args->{lastvalue} //= $args->{firstvalue} // $args->{value};
+        $args->{lastvalue} //= $args->{firstvalue} // $value;
         $args->{firstvalue} //= $args->{lastvalue};
 
     }
     else {
-        $args->{lastvalue}  ||= $args->{value};
-        $args->{firstvalue} ||= $args->{value};
+        $args->{lastvalue}  ||= $value;
+        $args->{firstvalue} ||= $value;
     }
 
     my $match = 0;
@@ -398,7 +389,7 @@ sub valsubst {
           if $_->valsubst( $pattern,
               $match == 0 ? $args->{firstvalue}
             : $match == ( $nmatch - 1 ) ? $args->{lastvalue}
-            :                             $args->{value} );
+            :                             $value );
     }
 
     return $match;

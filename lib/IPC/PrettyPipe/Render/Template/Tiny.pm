@@ -4,12 +4,11 @@ package IPC::PrettyPipe::Render::Template::Tiny;
 
 use Carp;
 use Template::Tiny;
-use Params::Check qw[ check ];
-use IPC::PrettyPipe::Check qw[ CheckIsa ];
 use Safe::Isa;
 
 use Moo;
-use MooX::Types::MooseLike::Base ':all';
+use Types::Standard -all;
+use Type::Params qw[ validate ];
 
 BEGIN {
     if ( $^O =~ /Win32/i ) {
@@ -114,10 +113,14 @@ sub render {
 
     my $self = shift;
 
-    my $args = check( { colorize => { default => 1 },
-		      },
-		      {@_} )
-      or croak( ref $self, "::pp ", Params::Check::last_error() );
+    my ( $args ) = 
+      validate( \@_,
+		slurpy Dict[
+			    colorize => Optional[ Bool ],
+			   ]
+	      );
+
+    $args->{colorize} //= 1;
 
     my $output;
 
@@ -199,9 +202,9 @@ Template>.
 =back
 
 
-=item run
+=item render
 
-  $renderer->run( %options );
+  $renderer->render( %options );
 
 The following options are available:
 

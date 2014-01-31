@@ -5,11 +5,9 @@ package IPC::PrettyPipe::Render::Test;
 use Carp;
 use Template::Tiny;
 use Params::Check qw[ check ];
-use IPC::PrettyPipe::Check qw[ CheckIsa ];
-use Safe::Isa;
 
 use Moo;
-use MooX::Types::MooseLike::Base ':all';
+use Types::Standard qw[ InstanceOf HashRef ];
 
 BEGIN {
     if ( $^O =~ /Win32/i ) {

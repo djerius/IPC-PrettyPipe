@@ -14,7 +14,7 @@ throws_ok {
     ppcmd;
 
 }
-qr/defined scalar/i, 'no args';
+qr/missing required argument/i, 'no cmd';
 
 subtest 'argsep, srgpfx, cmd, arg' => sub {
 
