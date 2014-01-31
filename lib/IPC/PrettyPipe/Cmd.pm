@@ -96,7 +96,7 @@ sub BUILDARGS {
       : {@_};
 
     delete @{$args}{ grep { ! defined $args->{$_} }  keys %$args };
-    $DB::single=1;
+
     return $args;
 }
 
