@@ -4,10 +4,9 @@ package IPC::PrettyPipe::Render::Test;
 
 use Carp;
 use Template::Tiny;
-use Params::Check qw[ check ];
 
 use Moo;
-use Types::Standard qw[ InstanceOf HashRef ];
+use Types::Standard -all;
 
 BEGIN {
     if ( $^O =~ /Win32/i ) {
@@ -112,10 +111,14 @@ sub render {
 
     my $self = shift;
 
-    my $args = check( { colorize => { default => 1 },
-		      },
-		      {@_} )
-      or croak( ref $self, "::pp ", Params::Check::last_error() );
+    my ( $args ) = 
+      validate( \@_,
+		slurpy Dict[
+			    colorize => Optional[ Bool ],
+			   ]
+	      );
+
+    $args->{colorize} //= 1;
 
     my $output;
 
