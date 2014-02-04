@@ -276,7 +276,7 @@ __END__
 
 =head1 NAME
 
-IPC::PrettyPipe::Stream - An I/O stream for an IPC::PrettyPipe::Cmd command
+B<IPC::PrettyPipe::Stream> - An I/O stream for an B<L<IPC::PrettyPipe::Cmd>> command
 
 =head1 SYNOPSIS
 
@@ -292,9 +292,8 @@ IPC::PrettyPipe::Stream - An I/O stream for an IPC::PrettyPipe::Cmd command
 
 =head1 DESCRIPTION
 
-B<IPC::PrettyPipe::Stream> objects provide a management interface for
-I/O streams attached to either B<IPC::PrettyPipe> or
-B<IPC::PrettyPipe::Cmd> objects.
+B<IPC::PrettyPipe::Stream> objects represent I/O streams attached to
+either B<IPC::PrettyPipe> or B<IPC::PrettyPipe::Cmd> objects.
 
 =head1 METHODS
 
@@ -325,6 +324,11 @@ information.
 The optional file attached to the stream. A file is
 not needed if the specification is for a redirection or a close.
 
+=item C<strict>
+
+If true, die if the stream specification requires a file but one is
+not provided, or it does not require a file and one is provided.
+
 =back
 
 =item B<spec>
@@ -344,6 +348,12 @@ Retrieve the file passed in to the constructor (if one was).
   $bool = $stream->has_file;
 
 Returns true if a file was passed to the constructor.
+
+=item B<requires_file>
+
+  $bool = $stream->requires_file;
+
+Returns true if the stream specification requires a file.
 
 =item B<Op>
 

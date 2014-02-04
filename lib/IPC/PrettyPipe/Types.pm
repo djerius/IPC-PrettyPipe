@@ -1,5 +1,8 @@
 package IPC::PrettyPipe::Types;
 
+use strict;
+use warnings;
+
 use Type::Library
   -base,
   -declare =>

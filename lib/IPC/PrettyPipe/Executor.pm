@@ -23,7 +23,7 @@ IPC::PrettyPipe::Executor - role for executor backends
 =head1 DESCRIPTION
 
 This role defines the required interface for execution backends for
-B<IPC::PrettyPipe>.  Backend classes must consume this role.
+B<L<IPC::PrettyPipe>>.  Backend classes must consume this role.
 
 
 =head1 METHODS

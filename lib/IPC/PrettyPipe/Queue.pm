@@ -67,7 +67,7 @@ B<IPC::PrettyPipe::Queue> - A simple queue
 =head1 DESCRIPTION
 
 This module provides a simple queue for objects which perform the
-B<IPC::PrettyPipe::Queue::Element> role.  No object should be in more than
+B<L<IPC::PrettyPipe::Queue::Element>> role.  No object should be in more than
 one queue at a time.
 
 =head1 METHODS
@@ -88,7 +88,7 @@ Construct an empty queue.
   $q->push( $element );
 
 Push the element on the end of the queue.  The element must perform
-the B<IPC::PrettyPipe::Queue::Element> role.
+the B<L<IPC::PrettyPipe::Queue::Element>> role.
 
 =item empty
 

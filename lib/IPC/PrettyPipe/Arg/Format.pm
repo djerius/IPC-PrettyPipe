@@ -49,3 +49,63 @@ sub copy_into { $_[0]->_copy_attrs( $_[1], 'sep', 'pfx' ); }
 
 
 1;
+
+__END__
+
+
+=head1 NAME
+
+B<IPC::PrettyPipe::Arg::Format> - Encapsulate argument formatting attributes
+
+
+=head1 SYNOPSIS
+
+  use IPC::PrettyPipe::Arg::Format;
+
+  $fmt = IPC::PrettyPipe::Arg::Format->new( %attr );
+
+=head1 DESCRIPTION
+
+This class encapsulates argument formatting attributes
+
+
+=head1 FUNCTIONS
+
+
+=over
+
+=item B<new>
+
+  $fmt = IPC::PrettyPipe::Arg::Format->new( %attr );
+
+The constructor.  The following attributes are available:
+
+=over
+
+=item pfx
+
+The prefix to apply to an argument
+
+=item sep
+
+The string which will separate option names and values.  If C<undef> (the default),
+option names and values will be treated as separate entities.
+
+=back
+
+
+=back
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2012 Smithsonian Astrophysical Observatory
+
+This software is released under the GNU General Public License.  You
+may find a copy at
+
+   http://www.fsf.org/copyleft/gpl.html
+
+
+=head1 AUTHOR
+
+Diab Jerius E<lt>djerius@cfa.harvard.eduE<gt>

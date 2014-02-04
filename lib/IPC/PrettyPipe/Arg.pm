@@ -85,7 +85,6 @@ sub BUILDARGS {
 # for render templates
 sub has_blank_value {
 
-
     return $_[0]->has_value && $_[0]->value eq '';
 
 }
@@ -150,7 +149,7 @@ __END__
 
 =head1 NAME
 
-IPC::PrettyPipe::Arg - An argument to a IPC::PrettyPipe::Cmd command
+B<IPC::PrettyPipe::Arg> - An argument to an B<L<IPC::PrettyPipe::Cmd>> command
 
 =head1 SYNOPSIS
 
@@ -172,8 +171,8 @@ IPC::PrettyPipe::Arg - An argument to a IPC::PrettyPipe::Cmd command
 
 =head1 DESCRIPTION
 
-B<IPC::PrettyPipe::Arg> objects are containers for arguments to commands in an
-B<IPC::PrettyPipe::Cmd> object.
+B<IPC::PrettyPipe::Arg> objects are containers for arguments to
+commands in an B<L<IPC::PrettyPipe::Cmd>> object.
 
 =head1 METHODS
 
@@ -184,12 +183,9 @@ B<IPC::PrettyPipe::Cmd> object.
   # named parameters; may provide additional attributes
   $arg = IPC::PrettyPipe::Arg->new( \%attr );
 
-  # concise interface; no additional attributes
-  #: switch arg
-  $arg = IPC::PrettyPipe::Arg->new( $name );
-
-  #: arg w/ value
-  $arg = IPC::PrettyPipe::Arg->new( [ $name, $value ] );
+  # concise interface
+  $arg = IPC::PrettyPipe::Arg->new( $name );             # switch arg
+  $arg = IPC::PrettyPipe::Arg->new( [ $name, $value ] ); # arg w/ value
 
 The available attributes are:
 
@@ -197,7 +193,7 @@ The available attributes are:
 
 =item C<name>
 
-The name of the argument.  This is required.
+I<Required>. The name of the argument.
 
 =item C<value>
 
@@ -222,19 +218,25 @@ that they are treated as separate entitites.  It defaults to C<undef>.
 
 =back
 
-=item pfx
+=item B<pfx>
 
   $current_value = $self->pfx;
   $self->pfx( $new_value );
 
 Get or set the value of the C<pfx> attribute.
 
-=item sep
+=item B<sep>
 
   $current_value = $self->sep;
   $self->sep( $new_value );
 
 Get or set the value of the C<sep> attribute.
+
+=item B<has_blank_value>
+
+  $bool = $self->has_blank_value
+
+Returns true if the value is the empty string.
 
 =item B<render>
 
@@ -249,14 +251,14 @@ If C<sep> is not defined, it returns an array ref which looks like
 
   $pfx . $name, $value
 
-=item valmatch
+=item B<valmatch>
 
   $bool = $arg->valmatch( $pattern );
 
 Returns true if the argument has a value and it matches the passed
 regular expression.
 
-=item valsubst
+=item B<valsubst>
 
   $arg->valsubst( $pattern, $rep );
 

@@ -21,6 +21,8 @@
 
 package IPC::PrettyPipe;
 
+## no critic (RequireUseStrict)
+
 our $VERSION = '1.21';
 
 use Carp;
@@ -97,6 +99,7 @@ has _executor => (
 
         my $backend = $_[0]->_executor_arg;
 
+	## no critic (ProhibitAccessOfPrivateData)
         return $backend->$_does( 'IPC::PrettyPipe::Executor' )
           ? $backend
           : $_[0]->_backend_factory( Execute => $backend );
@@ -129,6 +132,7 @@ has _renderer  => (
 
 	my $backend = $_[0]->_renderer_arg;
 
+	## no critic (ProhibitAccessOfPrivateData)
 	return $backend->$_does( 'IPC::PrettyPipe::Renderer' )
 	  ? $backend
 	  : $_[0]->_backend_factory( Render => $backend )
@@ -374,17 +378,23 @@ sub valsubst {
 
     if ( $nmatch == 1 ) {
 
+	## no critic (ProhibitAccessOfPrivateData)
         $args->{lastvalue} //= $args->{firstvalue} // $value;
         $args->{firstvalue} //= $args->{lastvalue};
 
     }
     else {
+
+	## no critic (ProhibitAccessOfPrivateData)
         $args->{lastvalue}  ||= $value;
         $args->{firstvalue} ||= $value;
     }
 
     my $match = 0;
     foreach ( @{ $self->cmds->elements } ) {
+
+	## no critic (ProhibitAccessOfPrivateData)
+
         $match++
           if $_->valsubst( $pattern,
               $match == 0 ? $args->{firstvalue}
@@ -435,7 +445,7 @@ __END__
 
 =head1 NAME
 
-IPC::PrettyPipe - manage human readable external command execution pipelines
+B<IPC::PrettyPipe> - manage human readable external command execution pipelines
 
 =head1 SYNOPSIS
 
@@ -467,7 +477,7 @@ treating commands, their options, and the options' values as separate
 entitites so that it can produce nicely formatted output.
 
 It is designed to be used in conjunction with other modules which
-actually execute pipelines, such as L<IPC::Run>.
+actually execute pipelines, such as B<L<IPC::Run>>
 
 This module (and its siblings B<L<IPC::PrettyPipe::Cmd>>,
 B<L<IPC::PrettyPipe::Arg>>, and B<L<IPC::PrettyPipe::Stream>>) present
@@ -477,12 +487,32 @@ infrastructure.
 For a simpler, more intuitive means of constructing pipelines, see
 B<L<IPC::PrettyPipe::DSL>>.
 
-=head2 Pretty Printing
+=head2 Pipeline Rendering (Pretty Printing)
 
-The default B<IPC::PrettyPipe> renderer renders a pipeline as if it
-were to be fed to a POSIX shell (which can be handy for debugging
-complex pipelines).
+B<L<IPC::PrettyPipe>> doesn't render a pipeline directly; instead it
+passes that job on to another object (which must consume the
+B<L<IPC::PrettyPipe::Render>> role).
 
+By default B<IPC::PrettyPipe> provides a renderer which uses
+B<L<Template::Tiny>> to render a pipeline as if it were to be fed to a
+POSIX shell (which can be handy for debugging complex pipelines).
+
+The same renderer may be fed a different template to use, or it may be
+replaced via the B<L</renderer>> attribute.
+
+=head2 Pipeline Execution
+
+Just as with rendering, B<IPC::PrettyPipe> doesn't execute a pipeline
+on its own.  Instead it calls upon another object (which must consume
+the B<L<IPC::PrettyPipe::Execute>> role).  By default it provides an
+executor which uses B<L<IPC::Run>> to run the pipeline.  The executor
+may be replaced via the B<L</executor>> attribute.
+
+=head2 Rewriting Commands' argument values
+
+Sometimes it's not possible to fill in an argument's value until after
+a pipeline has been created.  The B<L</valsubst>> method allows
+altering them after the fact.
 
 
 =head1 METHODS
@@ -492,7 +522,9 @@ complex pipelines).
 =item new
 
   # initialize the pipe with commands
-  $pipe = IPC::PrettyPipe->new( cmds => [ $cmd1, $cmd2 ], %attrs );
+  $pipe = IPC::PrettyPipe->new( 
+    cmds => [ $cmd1, $cmd2 ], %attrs
+  );
 
   # initialize the pipe with a single command
   $pipe = IPC::PrettyPipe->new( $cmd );
@@ -507,15 +539,34 @@ Create a new C<IPC::PrettyPipe> object. The available attributes are:
 =item cmds
 
 I<Optional>. The value should be an arrayref of commands to load into
-the pipe.  The contents of the array are passed to the B<ffadd>
-method; see it for more details.
+the pipe.  The contents of the array are passed to the B<L</ffadd>>
+method for processing.
 
-=item argpfx
+=item argpfx, argsep
 
-=item argsep
+I<Optional>.  The default prefix and separation attributes for
+arguments to commands.  See B<L<IPC::PrettyPipe::Arg>> for more
+details.  These override any specified via the C<L</argfmt>> object.
 
-I<Optional>.  Specify the default argument prefix and separation
-attributes.  See L<IPC::PrettyPipe::Args> for more details.
+=item C<argfmt>
+
+I<Optional>. An B<L<IPC::PrettyPipe::Arg::Format>> object specifying
+the default prefix and separation attributes for arguments to
+commands.  May be overridden by C<L</argpfx>> and C<L</argsep>>.
+
+=item executor
+
+I<Optional>. The means by which the pipeline will be executed.  It may
+be either a class name or an object reference, and must consume the
+B<L<IPC::PrettyPipe::Executor>> role.  It defaults to
+C<L<IPC::PrettyPipe::Execute::IPC::Run>>.
+
+=item renderer
+
+I<Optional>. The means by which the pipeline will be rendered.  It may
+be either a class name or an object reference, and must consume the
+B<L<IPC::PretyyPipe::Renderer>> role.  It defaults to
+B<L<IPC::PrettyPipe::Render::Template::Tiny>>.
 
 =back
 
@@ -524,14 +575,14 @@ attributes.  See L<IPC::PrettyPipe::Args> for more details.
   $cmd_obj = $pipe->add( $cmd );
   $cmd_obj = $pipe->add( cmd => $cmd, %options );
 
-This creates an B<IPC::PrettyPipe::Cmd> object, adds it to the
-B<IPC::PrettyPipe> object, and returns a handle to it.  If passed
+Create an B<L<IPC::PrettyPipe::Cmd>> object, add it to the
+B<IPC::PrettyPipe> object, and return a handle to it.  If passed
 a single parameter, it is assumed to be a C<cmd> parameter.
 
-This is a thin wrapper around the B<IPC::PrettyPipe::Cmd> constructor,
+This is a thin wrapper around the B<L<IPC::PrettyPipe::Cmd>> constructor,
 taking the same parameters.  The only difference is that if the value
-of the C<cmd> parameter is an B<IPC::PrettyPipe::Cmd> object it
-is inserted (not copied) into the pipeline.
+of the C<cmd> parameter is an B<L<IPC::PrettyPipe::Cmd>> object it
+is inserted into the pipeline.
 
 =item B<ffadd>
 
@@ -542,31 +593,33 @@ of the following items:
 
 =over
 
-=item an B<IPC::PrettyPipe::Cmd> object
+=item *
 
-This is inserted directly into the pipeline (not copied!).
+an B<L<IPC::PrettyPipe::Cmd>> object
 
-=item a string
+=item *
 
-This specifies a command name and indicates that it takes no
-arguments.  However, if it matches a stream operation (see
-L<IPC::PrettyPipe::Stream>), it will cause a new I/O stream to be
-attached to the pipeline.  If the operation requires an additional
-parameter, the next value in C<@cmds> will be used for that parameter.
+A command name (i.e. a string), for a command without arguments.
 
-=item an arrayref
+=item *
 
-The first element of the array is the command name; the rest are its
-arguments; these are passed to B<IPC::PrettyPipe::Cmd::new> as the
-C<cmd> and C<args> paramters.
+A string which matches a stream specification
+(L<IPC::PrettyPipe::Stream::Util/Stream Specification>), which will cause
+a new I/O stream to be attached to the pipeline.  If the specification
+requires an additional parameter, the next value in C<@cmds> will be
+used for that parameter.
 
-=item an B<IPC::PrettyPipe::DSL::Attribute::Cmd> object
+=item *
 
-B<ffadd> keeps a local copy of the formatting attributes for use when
-creating new B<IPC::PrettyPipe::Cmd> objects.  The local copy may be
-modified by passing in B<IPC::PrettyPipe::DSL::Attribute::Cmd>
-objects.  This is typically only useful when using
-B<IPC::PrettyPipe::DSL>, which provides a simpler interface.
+An arrayref. The first element is the command name; the rest are its
+arguments; these are passed to
+B<L<IPC::PrettyPipe::Cmd::new|IPC::PrettyPipe::Cmd/new>> as the C<cmd>
+and C<args> parameters.
+
+=item *
+
+An B<L<IPC::PrettyPipe::Arg::Format>> object, specifying the argument
+prefix and separator attributes for successive commands.
 
 =back
 
@@ -577,9 +630,9 @@ B<IPC::PrettyPipe::DSL>, which provides a simpler interface.
 These methods retrieve (when called with no arguments) or modify (when
 called with an argument) the similarly named object
 attributes. Changing these affects the defaults for future command
-arguments; itq does not affect existing arguments.
+arguments; it does not affect existing arguments.
 
-See L<IPC::PrettyPipe::Arg> for more information.
+See B<L<IPC::PrettyPipe::Arg>> for more information.
 
 =item B<render>
 
@@ -588,20 +641,27 @@ See L<IPC::PrettyPipe::Arg> for more information.
 Return a prettified string of the pipeline.
 
 
+=item B<run>
+
+   $pipe->run
+
+Execute the pipeline.
+
 =item B<stream>
 
-  $pipe->stream( $op );
-  $pipe->stream( $op, $file );
+  $pipe->stream( $stream_spec );
+  $pipe->stream( $stream_spec, $file );
 
-Add an I/O stream to the command.  Stream operators have the same syntax
-as in L<IPC::Run>.  See L<IPC::PrettyPipe::Stream> for more information.
+Add an I/O stream to the pipeline.  See
+L<IPC::PrettyPipe::Stream::Util/Stream Specification> for more
+information.
 
 =item B<streams>
 
   $streams = $pipe->streams
 
 Return the streams associated with the command as an arrayref of
-B<IPC::PrettyPipe::Stream> objects.
+B<L<IPC::PrettyPipe::Stream>> objects.
 
 =item B<valmatch>
 
@@ -610,7 +670,7 @@ B<IPC::PrettyPipe::Stream> objects.
 Returns the number of I<commands> with a value matching the passed
 regular expression.  (This is B<not> equal to the number of total
 I<values> which matched.  To determine this, iterate over each
-command, calling it's B<valmatch> method ).
+command, calling it's B<L<valmatch|IPC::PrettyPipe::Cmd/valmatch>> method ).
 
 =item B<valsubst>
 
@@ -634,8 +694,10 @@ The last matched argument will be replaced with this value.
 =back
 
 Note that matching is done on a per-command basis, not per-argument
-basis, so that if a command has multiple matching values, they
-will all use the same replacement string.
+basis, so that if a command has multiple matching values, they will
+all use the same replacement string.  To perform more specific
+changes, use each command's
+B<L<valsubst|IPC::PrettyPipe::Cmd/valsubst>> method directly.
 
 Here's an example where the commands use parameters C<input> and
 C<output> to indicate where they should write.  The strings "stdout"
@@ -644,14 +706,25 @@ B<valsubst> allows an easy update of the pipeline after construction
 to specify the correct streams.
 
   $p = new IPC::PrettyPipe;
+
   $p->add( cmd => 'cmd1',
-           args => [ [ input => 'INPUT', output => 'OUTPUT' ] ] );
+           args => [ [ input  => 'INPUT',
+                       output => 'OUTPUT' ] ] );
+
   $p->add( cmd => 'cmd2',
-           args => [ [ input => 'INPUT', output => 'OUTPUT' ] ] );
+           args => [ [ input  => 'INPUT',
+                       output => 'OUTPUT' ] ] );
+
   $p->add( cmd => 'cmd3',
-           args => [ [ input => 'INPUT', output => 'OUTPUT' ] ] );
-  $p->valsubst( qr/OUTPUT/, 'stdout', lastvalue => 'output_file' );
-  $p->valsubst( qr/INPUT/, 'stdin', firstvalue => 'input_file' );
+           args => [ [ input  => 'INPUT',
+                       output => 'OUTPUT' ] ] );
+
+  $p->valsubst( qr/OUTPUT/, 'stdout',
+                lastvalue => 'output_file' );
+
+  $p->valsubst( qr/INPUT/, 'stdin',
+                firstvalue => 'input_file' );
+
   print $p->render, "\n"
 
 results in

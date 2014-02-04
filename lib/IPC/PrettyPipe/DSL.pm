@@ -146,7 +146,7 @@ __END__
 
 =head1 NAME
 
-IPC::PrettyPipe::DSL - shortcuts to building an IPC::PrettyPipe object
+B<IPC::PrettyPipe::DSL> - shortcuts to building an B<L<IPC::PrettyPipe>> object
 
 =head1 SYNOPSIS
 
@@ -156,12 +156,14 @@ IPC::PrettyPipe::DSL - shortcuts to building an IPC::PrettyPipe object
 	ppipe
         # one command per array
         [ 'mycmd',
-              argsep $sep,        # set default formatting attributes
+              argsep '=',         # set default formatting attributes
               argpfx '-',
-              $arg, $arg,         # boolean/switch arguments
+              $arg1, $arg2,       # boolean/switch arguments
               argpfx '--',        # switch argument prefix
               \@args_with_values  # ordered arguments with values
               \%args_with_values, # unordered arguments with values
+              argpfx '',          # no prefixes for the rest
+              @args_without_values,
               '2>', 'stderr_file' # automatic recognition of streams
         ],
         # another command
@@ -174,9 +176,9 @@ IPC::PrettyPipe::DSL - shortcuts to building an IPC::PrettyPipe object
 
   $cmd = ppcmd 'mycmd',
           argpfx '-',     # default for object
-          $arg, $arg,
+          $arg1, $arg2,
           argpfx '--',    # change for next arguments
-          $long_arg, $long_arg;
+          $long_arg1, $long_arg2;
 
   # and add it to a pipeline
   $pipe = ppipe $cmd;
@@ -194,125 +196,131 @@ building pipelines easier.
 
 =head1 FUNCTIONS
 
+
+Pipelines are created by chainging together commands with arguments.
+Arguments which are options may have I<prefixes>, and options which
+have values may have their names separated from their values by a
+I<separator> string.
+
+The B<ppipe>, B<ppcmd>, and B<pparg> functions are used to create
+pipelines, commands, and arguments.
+
+The B<argpfx>, and B<argsep> functions are used to change the argument
+prefix and separator strings.  Calls to these are embeded in lists of
+arguments and commands, and change the argument prefixes and separator
+strings for the succeeding entries.  These are called I<argument
+attribute modifiers> and are documented in L</Argument Attribute
+Modifiers>.
+
+To specify stream redirection for either pipelines or commands, insert
+either a B<L<IPC::PrettyPipe::Stream>> object or a string stream
+specification (see L<IPC::PrettyPipe::Stream::Util/Stream
+Specification>).  If the redirection requires another parameter, it
+should immediately follow the object or string specification.
+
 =head2 Pipeline component construction
 
 =over
 
 =item B<ppipe>
 
-  $pipe = ppipe @attribute_modifiers,
+  $pipe = ppipe @arg_attr_mods,
                 @args;
 
-  $pipe = ppipe argpfx( '--'),
-                [ 'cmd0', 'arg0' ],
-                [ 'cmd1', 'arg0',
-                          argpfx( '' ), argsep( '=' ),
-                          [ arg1 => $arg1_value, arg2 => $arg2_value ],
-                ],
-                [ 'cmd2', 'arg0' ];
+  $pipe =
+    ppipe
+
+      # set the default for this pipe
+      argpfx( '--'),
+
+      # cmd0 --arg0
+      [ 'cmd0', 'arg0' ],
+
+      # cmd1 --arg0 --arg1 $value1 --arg2 $value2
+      [
+        'cmd1', 'arg0', [ arg1 => $value1, arg2 => $value2 ],
+      ],
+
+      # tweak this for the following commands
+      argpfx(''),
+
+      # cmd2 arg0 arg1=$value1 arg2=$value2
+      [
+        'cmd2', 'arg0',
+        argsep( '=' ),
+        [ arg1 => $value1, arg2 => $value2 ],
+      ],
+
+      # tweak this for the following commands
+      argpfx('--'),
+
+      # cmd3 --arg0
+      [ 'cmd3', 'arg0' ],
+
+      # cmd4
+      'cmd4';
 
 
-B<ppipe> creates an B<IPC::PrettyPipe> object.  It is passed an array
-of arguments which may be one or more of the following:
+
+
+B<ppipe> creates an B<IPC::PrettyPipe> object.  It is passed (in order)
+
+=over
+
+=item 1
+
+An optional list of argument attribute modifiers, providing the defaults for
+the returned B<L<IPC::PrettyPipe>> object.
+
+=item 2
+
+A list of one or more of the following
 
 =over
 
 =item *
 
-attribute modifiers
-
-These will affect all of the commands and arguments which follow.
-Attribute modifiers which I<precede> all other arguments are stored in
-the returned B<IPC::PrettyPipe> object and are used as its defaults.
-All other modifiers override these for the remainder of the arguments.
-
-See L</Attribute Modifiers> for more information.
+A command name (i.e. a string), for a command without arguments.
 
 =item *
 
-Commands (and their arguments) which may be specified as either
+an B<L<IPC::PrettyPipe::Cmd>> object
+
+=item *
+
+An arrayref. The first element is the command name; the rest are
 
 =over
 
 =item *
 
-strings
-
-These may specify I<either>
-
-=over
+arguments;
 
 =item *
 
-The name of a command without any arguments; or
+argument attribute modifiers (which affect subsequent entries in the array); and
 
 =item *
 
-a stream specification for the pipeline. If the specification requires
-an additional parameter, the next element in the argument list will be
-used for that parameter.
+stream specifications or objects.
 
 =back
 
-=item *
-
-an arrayref
-
-The first array element is the command name. The succeeding elements are
-arguments and input and output stream specifications, which may take
-the following forms:
-
-=over
+These are passed to
+B<L<IPC::PrettyPipe::Cmd::new|IPC::PrettyPipe::Cmd/new>> as the C<cmd>
+and C<args> parameters.
 
 =item *
 
-strings
-
-These may specify I<either>
-
-=over
+Argument Attribute modifiers, which affect attributes for all of the commands
+and arguments which follow.
 
 =item *
 
-the name of an argument which takes no value; or
-
-=item *
-
-a stream specification. If the specification requires an additional
-parameter, the next element in the argument list will be used for that
-parameter.
-
-=back
-
-=item *
-
-references to arrays
-
-The arrays must contain I<pairs> of argument names and values.  The
-arguments will be supplied to the command in the order they appear in
-the array.
-
-=item *
-
-hashrefs
-
-These specify one or more pairs of argument names and values.
-The arguments will be supplied to the command in a random order.
-
-=item *
-
-attribute modifiers
-
-These affect all of the arguments which follow. See L</Attribute
-Modifiers> for more details.
-
-
-=back
-
-
-=item *
-
-an B<IPC::PrettyPipe::Cmd> object
+A stream specification (L<IPC::PrettyPipe::Stream::Util/Stream
+Specification>), or an B<L<IPC::PrettyPipe::Stream>> object. If the
+specification requires an additional parameter, the next value in
+C<@args> is used.
 
 =back
 
@@ -324,18 +332,18 @@ an B<IPC::PrettyPipe::Cmd> object
                $cmd,
                @cmd_args;
 
-  $cmd = ppcmd 'cmd0', 'arg0', [ arg1 => $arg1_value ];
+  $cmd = ppcmd 'cmd0', 'arg0', [ arg1 => $value1 ];
   $cmd = ppcmd argpfx '--',
-             'cmd0', 'arg0', [ arg1 => $arg1_value ];
+             'cmd0', 'arg0', [ arg1 => $value1 ];
 
-B<ppcmd> creates an B<IPC::PrettyPipe::Cmd> object.  It is passed (in order)
+B<ppcmd> creates an B<L<IPC::PrettyPipe::Cmd>> object.  It is passed (in order)
 
 =over
 
 =item 1
 
-An optional list of attribute modifiers. These are stored in the
-returned B<IPC::PrettyPipe::Cmd> object and are used as its defaults.
+An optional list of argument attribute modifiers, providing the defaults for
+the returned B<L<IPC::PrettyPipe::Cmd>> object.
 
 =item 2
 
@@ -343,57 +351,39 @@ The command name
 
 =item 3
 
-A list of command arguments, attribute modifiers, and stream specifications.
+A list of command arguments, argument attribute modifiers, and stream specifications.
 This list may contain
 
 =over
 
 =item *
 
-strings
-
-These may specify I<either>
-
-=over
+Scalars, representing single arguments;
 
 =item *
 
-The name of an argument which takes no value; or
+B<L<IPC::PrettyPipe::Arg>> objects;
 
 =item *
 
-a stream specification for the command. If the specification requires
-an additional parameter, the next element in the argument list will be
-used for that parameter.
-
-=back
+Arrayrefs with pairs of names and values.  The arguments will be supplied to the
+command in the order they appear;
 
 =item *
 
-an arrayref
-
-This must contain I<pairs> of argument names and values.  The
-arguments will be supplied to the command in the order they appear in
-the array.
+Hashrefs with pairs of names and values. The arguments will be supplied to the
+command in a random order;
 
 =item *
 
-a hashref
-
-This specifies one or more pairs of argument names and values.  The
-arguments will be supplied to the command in a random order.
-
-=item *
-
-an attribute modifier.
-
-This changes the attributes for the arguments which follow.  It does
-not change the attributes stored in the returned
-B<IPC::PrettyPipe::Cmd> object.
+B<L<IPC::PrettyPipe::Stream>> objects or stream specifications
+(L<IPC::PrettyPipe::Stream::Util/Stream Specification>).  If the
+specification requires an additional parameter, the next value in
+C<@cmd_args> will be used for that parameter.
 
 =item *
 
-an B<IPC::PrettyPipe::Arg> object
+argument attribute modifiers, changing the attributes for the arguments which follow in C<@cmd_args>.
 
 =back
 
@@ -405,15 +395,14 @@ an B<IPC::PrettyPipe::Arg> object
                $name,
                $value;
 
-B<ppcmd> creates an B<IPC::PrettyPipe::Arg> object.   It is passed
+B<pparg> creates an B<L<IPC::PrettyPipe::Arg>> object.   It is passed
 (in order)
 
 =over
 
 =item 1
 
-An optional list of attribute modifiers. These are stored in the
-returned B<IPC::PrettyPipe::Arg> object.
+An optional list of argument attribute modifiers.
 
 =item 2
 
@@ -431,7 +420,7 @@ An optional value.
   $stream = ppstream $spec;
   $stream = ppstream $spec, $file;
 
-B<ppcmd> creates an B<IPC::PrettyPipe::Stream> object.
+B<ppstream> creates an B<IPC::PrettyPipe::Stream> object.
 It is passed (in order):
 
 =over
@@ -448,30 +437,31 @@ An optional file name (if required by the stream specification).
 
 =back
 
-=head2 Attribute Modifiers
+=head2 Argument Attribute Modifiers
 
-Attribute modifiers can be used to specify the default values of the
-following attributes:
+Argument Attribute modifiers are functions which change the default
+values of the argument prefix and separator strings (for more
+information see L<IPC::PrettyPipe::Arg>).  There are two functions,
 
 =over
 
-=item I<argpfx>
+=item B<argpfx>
 
-=item I<argsep>
-
-Strings which prefix and separate command arguments and values (for
-more information see L<IPC::PrettyPipe::Arg>).
+=item B<argsep>
 
 =back
 
-Modifiers take a single value (the new value of the attribute) which
-may be enclosed in parenthesis:
+which take a single argument (the new value of the attribute).
+
+Calls to them are typically embedded in lists of arguments and
+commands, e.g.
 
   $p = ppipe argpfx '-',
              [ 'cmd0', 'arg0' ],
              argpfx '--',
              [ 'cmd1', argpfx('-'), 'arg1' ],
              [ 'cmd2', 'arg0' ];
+
 
 and affect the default value of the attribute for the remainder of the
 context in which they are specified.
@@ -487,55 +477,6 @@ For example, after the above code is run, the following holds:
 
   $p->cmds->[2]->argpfx eq '--'
   $p->cmds->[2]->args->[0]->argpfx eq '--'
-
-
-=head2 Stream Specifications
-
-A stream specification may be either an B<IPC::PrettyPipe::Stream>
-object or a string.
-
-As a string, the specification may take one of the following forms:
-(any resemblance to stream operators used by B<IPC::Run> is purely
-non-coincidental):
-
-  Spec    Op    Mode    File    Function
-  ----    ---  ----    ----    -----------------------
-  <       <     I       y       read from file via fd 0
-  <N      <     I       y       read from file via fd N
-  >       >     O       y       write to file via fd 1
-  >N      >     O       y       write to file via fd N
-
-  >&      >&    O       n       redirect fd 2 to fd 1
-  &>      &>    O       n       redirect fd 2 to fd 1
-
-  N<&-    <&-   ?       n       close fd N
-
-  M<&N    <&    I       n       dup fd M as fd N
-  N>&M    >&    O       n       dup fd M as fd N
-
- where
-
-=over
-
-=item *
-
-I<M> and I<N> are integers indicating file descriptors
-
-=item *
-
-C<Mode> indicates input (I<I>), output (I<O>), or not applicable (I<?>)
-
-=item *
-
-C<File> indicates whether an additional parameter (file name) is
-required.  If so, the parameter must follow the stream specification, e.g.:
-
-  '>3', $output_file
-
-indicates that fd 3 should be configured for output to C<$output_file>.
-
-=back
-
 
 =head1 COPYRIGHT & LICENSE
 

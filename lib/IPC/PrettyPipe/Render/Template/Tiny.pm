@@ -120,7 +120,9 @@ sub render {
 			   ]
 	      );
 
-    $args->{colorize} //= 1;
+
+
+    $args->{colorize} //= 1;    ## no critic (ProhibitAccessOfPrivateData)
 
     my $output;
 
@@ -154,7 +156,7 @@ __END__
 
 =head1 NAME
 
-IPC::PrettyPipe::Render::Template::Tiny - rendering backend using Template::Tiny
+B<IPC::PrettyPipe::Render::Template::Tiny> - rendering backend using B<L<Template::Tiny>>
 
 =head1 SYNOPSIS
 
@@ -170,8 +172,8 @@ IPC::PrettyPipe::Render::Template::Tiny - rendering backend using Template::Tiny
 =head1 DESCRIPTION
 
 B<IPC::PrettyPipe::Render::Template::Tiny> implements the
-B<IPC::PrettyPipe::Renderer> role, providing a renderer backend for
-B<IPC::PrettyPipe> using the B<Template::Tiny> module.
+B<L<IPC::PrettyPipe::Renderer>> role, providing a renderding backend for
+B<L<IPC::PrettyPipe>> using the B<L<Template::Tiny>> module.
 
 =head1 METHODS
 
@@ -181,14 +183,14 @@ B<IPC::PrettyPipe> using the B<Template::Tiny> module.
 
   $renderer = IPC::PrettyPipe::Render::Template::Tiny->new( %attr );
 
-Construct a new renderer.  Typically this is done automatically by B<IPC::PrettyPipe>.
+Construct a new renderer.  Typically this is done automatically by B<L<IPC::PrettyPipe>>.
 The following attributes are available:
 
 =over
 
 =item pipe
 
-The B<IPC::PrettyPipe> object to render.
+The B<L<IPC::PrettyPipe>> object to render.
 
 =item colors
 
@@ -196,7 +198,7 @@ A color specification; see L</Rendered Colors>.
 
 =item template
 
-A B<Template::Tiny> template to generate the output.  See L</Rendering
+A B<L<Template::Tiny>> template to generate the output.  See L</Rendering
 Template>.
 
 =back
@@ -214,7 +216,7 @@ The following options are available:
 
 colorize
 
-If true (the default) the output is colorized using B<Term::AnsiColor>.
+If true (the default) the output is colorized using B<L<Term::AnsiColor>>.
 
 =back
 
@@ -223,7 +225,7 @@ If true (the default) the output is colorized using B<Term::AnsiColor>.
   $pipe = $renderer->pipe;
   $renderer->pipe( $pipe );
 
-Retrieve or set the B<IPC::PrettyPipe> object to render.
+Retrieve or set the B<L<IPC::PrettyPipe>> object to render.
 
 =item colors
 
@@ -237,7 +239,7 @@ Retrieve or set the colors to be output; see L</Rendered Colors>.
   $template = $renderer->template;
   $renderer->template( $template );
 
-Retrieve or set the B<Template::Tiny> template used to generate the
+Retrieve or set the B<L<Template::Tiny>> template used to generate the
 output.  See L</Rendering Template>.
 
 =back
@@ -254,16 +256,16 @@ following parameters:
 
 =item C<pipe>
 
-C<pipe> is the B<IPC::PrettyPipe> object. B<Template::Tiny> doesn't
-support loop constructs, so the B<IPC::PrettyPipe> B<streams()> and
-B<cmds()> methods return B<IPC::PrettyPipe::Queue> objects, which
+C<pipe> is the B<L<IPC::PrettyPipe>> object. B<L<Template::Tiny>> doesn't
+support loop constructs, so the B<L<IPC::PrettyPipe>> B<L<streams|IPC::PrettyPipe/streams>> and
+B<L<cmds|IPC::PrettyPipe/cmds>> methods return B<L<IPC::PrettyPipe::Queue>> objects, which
 provide methods for determining if the lists are empty.
 
 
   [% IF pipe.streams.empty %][% ELSE %](\t\\
   [% END -%]
 
-Note that B<Template::Tiny> resolves object methods with the same syntax as it
+Note that B<L<Template::Tiny>> resolves object methods with the same syntax as it
 resolves hash entries.
 
 Iteration looks like this:
@@ -271,7 +273,7 @@ Iteration looks like this:
   [%- FOREACH cmd IN pipe.cmds.elements %]
   [% END %]
 
-An B<IPC::PrettyPipe::Queue::Element> has additional methods which
+An B<L<IPC::PrettyPipe::Queue::Element>> has additional methods which
 indicates whether it is the first or last in its queue.
 
   [%- IF cmd.first %]  [% ELSE %]\t\\

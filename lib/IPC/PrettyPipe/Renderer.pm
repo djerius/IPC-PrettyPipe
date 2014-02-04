@@ -23,7 +23,7 @@ IPC::PrettyPipe::Renderer - role for renderer backends
 =head1 DESCRIPTION
 
 This role defines the required interface for rendering backends for
-B<IPC::PrettyPipe>.  Backend classes must consume this role.
+B<L<IPC::PrettyPipe>>.  Backend classes must consume this role.
 
 
 =head1 METHODS

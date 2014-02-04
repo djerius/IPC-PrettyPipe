@@ -23,7 +23,7 @@ __END__
 
 =head1 NAME
 
-B<IPC::PrettyPipe::Queue::Element> - role for an element in an B<IPC::PrettyPipe::Queue>
+B<IPC::PrettyPipe::Queue::Element> - role for an element in an B<L<IPC::PrettyPipe::Queue>>
 
 =head1 SYNOPSIS
 
@@ -33,7 +33,7 @@ B<IPC::PrettyPipe::Queue::Element> - role for an element in an B<IPC::PrettyPipe
 =head1 DESCRIPTION
 
 This role should be composed into objects which will be contained in
-B<IPC::PrettyPipe::Queue>s.  No object should be in more than one
+B<L<IPC::PrettyPipe::Queue>> objects.  No object should be in more than one
 queue at a time.
 
 

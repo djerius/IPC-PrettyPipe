@@ -106,7 +106,7 @@ with 'IPC::PrettyPipe::Executor';
 
 =head1 NAME
 
-IPC::PrettyPipe::Execute::IPC::Run - execution backend using IPC::Run
+B<IPC::PrettyPipe::Execute::IPC::Run> - execution backend using B<L<IPC::Run>>
 
 =head1 SYNOPSIS
 
@@ -123,15 +123,15 @@ IPC::PrettyPipe::Execute::IPC::Run - execution backend using IPC::Run
 =head1 DESCRIPTION
 
 B<IPC::PrettyPipe::Execute::IPC::Run> implements the
-B<IPC::PrettyPipe::Executor> role, providing an execution backend for
-B<IPC::PrettyPipe> using the B<IPC::Run> module.
+B<L<IPC::PrettyPipe::Executor>> role, providing an execution backend for
+B<L<IPC::PrettyPipe>> using the B<L<IPC::Run>> module.
 
-It also provides proxied access to the IPC::Run B<start>, B<pump>, and
-B<finish> methods.  (It does not provide direct access to the
-B<IPC::Run> harness object).
+It also provides proxied access to the B<L<IPC::Run>> B<L<start|IPC::Run/start>>, B<L<pump|IPC::Run/pump>>, and
+B<L<finish|IPC::Run/finish>> methods.  (It does not provide direct access to the
+B<L<IPC::Run>> harness object).
 
 When using the proxied methods, the caller must ensure that the
-B<finish> method is invoked to ensure that the parent processes'
+B<L</finish>> method is invoked to ensure that the parent processes'
 file descriptors are properly restored.
 
 =head1 Methods
@@ -144,15 +144,15 @@ Run the pipeline.
 
 =item C<start>
 
-Invoke the B<IPC::Run::start> method.
+Invoke the B<L<IPC::Run>> B<L<start|IPC::Run/start>> method.
 
 =item C<pump>
 
-Invoke the B<IPC::Run::pump> method.
+Invoke the B<L<IPC::Run>> B<L<pump|IPC::Run/pump>> method.
 
 =item C<finish>
 
-Invoke the B<IPC::Run::finish> method.
+Invoke the B<L<IPC::Run>> B<L<finish|IPC::Run/finish>> method.
 
 =back
 

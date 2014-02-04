@@ -102,37 +102,20 @@ __END__
 
 =head1 NAME
 
-IPC::PrettyPipe::Stream::Utils - support utilities for streams
+B<IPC::PrettyPipe::Stream::Utils> - support utilities for streams
 
 =head1 SYNOPSIS
 
-  use IPC::PrettyPipe::Stream::Utils qw[ parse_spec
+  use IPC::PrettyPipe::Stream::Utils qw[ parse_spec ];
 
   $opc = parse_spec( $op );
 
 =head1 DESCRIPTION
 
-=head1 FUNCTIONS
+=head2 Stream Specification
 
-B<IPC::PrettyPipe::Stream::Utils> exports the following functions upon
-request:
-
-=over
-
-=item B<parse_spec>
-
-  $components = parse_spec( $spec )
-
-Parse a stream specification into components I<Op>, I<N>, and I<M>.
-Returns a hashref with the information indexed by the component names.
-
-If the specification indicates that additional parameters are required
-(such as the name of a file to be read or written to), the key
-C<param> will be set.
-
-A stream specification may take one of the following forms (any
-resemblance to stream operators used by B<L<IPC::Run>> is purely
-non-coincidental):
+A stream specification is a string which may take one of the forms in
+the I<Spec> column:
 
   Spec    Op    Mode    File    Function
   ----    ---  ----    ----    -----------------------
@@ -168,8 +151,29 @@ required.
 
 =back
 
+Any resemblance to stream operators used by B<L<IPC::Run>> is purely
+non-coincidental.
+
+=head1 FUNCTIONS
+
+B<IPC::PrettyPipe::Stream::Utils> exports the following functions upon
+request:
+
+=over
+
+=item B<parse_spec>
+
+  $components = parse_spec( $spec )
+
+Parse a stream specification into components I<Op>, I<N>, and I<M>.
+Returns a hashref with the information indexed by the component names.
+
+If the specification indicates that additional parameters are required
+(such as the name of a file to be read or written to), the key
+C<param> will be set.
 
 =back
+
 
 =head1 COPYRIGHT & LICENSE
 

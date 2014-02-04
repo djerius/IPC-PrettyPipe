@@ -95,6 +95,7 @@ sub BUILDARGS {
 	)
       : {@_};
 
+    ## no critic (ProhibitAccessOfPrivateData)
     delete @{$args}{ grep { ! defined $args->{$_} }  keys %$args };
 
     return $args;
@@ -363,13 +364,13 @@ __END__
 
 =head1 NAME
 
-IPC::PrettyPipe::Cmd - A command in an IPC::PrettyPipe pipeline
+B<IPC::PrettyPipe::Cmd> - A command in an B<L<IPC::PrettyPipe>> pipeline
 
 =head1 SYNOPSIS
 
   use IPC::PrettyPipe::Cmd;
 
-  # named arguments; may specify additional options
+  # named arguments
   $cmd = IPC::PrettyPipe::Cmd->new( cmd  => $cmd,
                                     args => $args,
                                     %attrs
@@ -380,24 +381,22 @@ IPC::PrettyPipe::Cmd - A command in an IPC::PrettyPipe pipeline
   $cmd = IPC::PrettyPipe::Cmd->new( [ $cmd, $args ] );
 
   #####
-  # specify different argument prefices for different arguments
+  # different argument prefix for different arguments
   $cmd = IPC::PrettyPipe::Cmd->new( 'ls' );
-
-  # set default prefix to single hyphen
-  $cmd->argpfx( '-');
+  $cmd->argpfx( '-' ); # prefix applied to subsequent arguments
   $cmd->add( 'f' );    # -f
   $cmd->add( 'r' );    # -r
 
-  # add "long" arguments, random order
+  # "long" arguments, random order
   $cmd->add( { width => 80, sort => 'time' },
                argpfx => '--', argsep => '=' );
 
-  # add "long" arguments, specified order
+  # "long" arguments, specified order
   $cmd->add( [ width => 80, sort => 'time' ],
                argpfx => '--', argsep => '=' );
 
   # attach a stream to the command
-  $cmd->stream( op => $op, file => $file );
+  $cmd->stream( $spec, $file );
 
   # be a little more free form in adding arguments
   $cmd->ffadd( '-l', [-f => 3, -b => 9 ], '>', 'stdout' );
@@ -409,8 +408,14 @@ IPC::PrettyPipe::Cmd - A command in an IPC::PrettyPipe pipeline
 =head1 DESCRIPTION
 
 B<IPC::PrettyPipe::Cmd> objects are containers for the individual
-commands in a pipeline created by B<IPC::PrettyPipe>.  A command
-may have one or more arguments, which may have values.
+commands in a pipeline created by B<L<IPC::PrettyPipe>>.  A command
+may have one or more arguments, some of which are options consisting
+of a name and an optional value.
+
+Options traditionally have a prefix (e.g. C<--> for "long" options,
+C<-> for short options).  B<IPC::PrettyPipe::Cmd> makes no distinction
+between option and non-option arguments.  The latter are simply
+specified as arguments with a blank prefix.
 
 
 =head1 METHODS
@@ -421,7 +426,7 @@ may have one or more arguments, which may have values.
 
 =item B<new>
 
-  # named arguments; other attributes may be specified
+  # constructor with named arguments
   $cmd = IPC::PrettyPipe::Cmd->new( cmd => $cmd, %attr );
 
   # concise constructor interface
@@ -429,8 +434,9 @@ may have one or more arguments, which may have values.
   $cmd = IPC::PrettyPipe::Cmd->new( [ $cmd, $args ] );
 
 
-A comand must be specified; there is no means of creating an object
-without a command.
+Construct a B<IPC::PrettyPipe::Cmd> object encapsulating C<$cmd>.
+C<$cmd> must be specified.
+
 
 The available attributes are:
 
@@ -438,41 +444,41 @@ The available attributes are:
 
 =item C<cmd>
 
- The name of the program to execute.
+The program to execute.
 
 =item C<args>
 
-The arguments to the program.  C<args> may be
+I<Optional>. Arguments for the program.  C<args> may be
 
 =over
 
 =item *
 
-A scalar, the name of an argument which takes no value
+A scalar, e.g. a single argument;
 
 =item *
 
-An B<IPC::PrettyPipe::Arg> object, which is used directly (not copied!).
+An B<L<IPC::PrettyPipe::Arg>> object;
 
 =item *
 
 An array reference containing more complex argument specifications.
+Its elements are processed with the B<L</ffadd>> method.
 
 =back
 
-If C<args> is an arrayref, its elements are processed with the B<ffadd> method;
-see it for more details.
+=item argpfx, argsep
 
-=item C<argpfx>
-
-=item C<argsep>
-
-Argument prefix and separator strings to be used for arguments. See
-L<IPC::PrettyPipe::Arg> for more information.
+I<Optional>.  The default prefix and separation attributes for
+command arguments.  See B<L<IPC::PrettyPipe::Arg>> for more
+details.  These override any specified via the C<L</argfmt>> object.
 
 =item C<argfmt>
 
-An B<IPC::PrettyPipe::Arg::Format> object.
+I<Optional>. An B<L<IPC::PrettyPipe::Arg::Format>> object which will be used to
+specify the default prefix and separation attributes for arguments to
+commands.  May be overridden by C<L</argpfx>> and C<L</argsep>>.
+
 
 =back
 
@@ -487,9 +493,8 @@ An B<IPC::PrettyPipe::Arg::Format> object.
   $cmd->add( $args );
   $cmd->add( arg => $args, %options );
 
-This method adds one or more additional arguments to the command.  If
-only one parameter is passed to B<add>, it is assumed to be the C<arg>
-parameter.
+Add one or more arguments to the command.  If a single parameter is
+passed, it is assumed to be the C<arg> parameter.
 
 This is useful if some arguments should be conditionally given, e.g.
 
@@ -508,34 +513,34 @@ values:
 
 =over
 
-=item an B<IPC::PrettyPipe::Arg> object
+=item *
 
-The is used directly (not copied!).
+an B<L<IPC::PrettyPipe::Arg>> object;
 
-=item a string
+=item *
 
-This specifies the argument's name and indicates that it takes no value.
+A scalar, e.g. a single argument;
 
-=item an arrayref
+=item *
 
-This must contain I<pairs> of names and values.  The arguments will be
-supplied to the command in the order they appear in the array.
+An arrayref with pairs of names and values.  The arguments will be supplied to the
+command in the order they appear.
 
-=item a hashref
+=item *
 
-This specifies one or more pairs of names and values.
-The arguments will be supplied to the command in a random order.
+A hashref with pairs of names and values. The arguments will be supplied to the
+command in a random order.
 
 =back
 
-=item C<argpfx> = I<string>
+=item C<argpfx> => I<string>
 
-=item C<argsep> = I<string>
+=item C<argsep> => I<string>
 
-These override the C<argpfx> and C<argsep> attributes for this
+These override the object's C<argpfx> and C<argsep> attributes for this
 argument only.
 
-=item C<argfmt> = B<IPC::PrettyPipe::Arg::Format> object
+=item C<argfmt> => B<L<IPC::PrettyPipe::Arg::Format>> object
 
 This will override the format attributes for this argument only.
 
@@ -545,23 +550,23 @@ This will override the format attributes for this argument only.
 
   $args = $cmd->args
 
-Returns an B<IPC::PrettyPipe::Queue> object containing the arguments
-associated with the command.
+Returns an B<L<IPC::PrettyPipe::Queue>> object containing the
+arguments associated with the command.
 
-=item B<argpfx>
+=item B<argpfx>,
 
 =item B<argsep>
 
 =item B<argfmt>
 
-These methods retrieve (when called with no arguments) or modify (when
-called with an argument) the similarly named object attributes.  See
-L<IPC::PrettyPipe::Arg> for more information.  Changing them does not
-affect existing arguments, only those created after the modification.
+Retrieve (when called with no arguments) or modify (when called with
+an argument) the similarly named object attributes.  See
+B<L<IPC::PrettyPipe::Arg>> for more information.  Changing them
+affects new, not existing, arguments;
 
 =item B<cmd>
 
-  $cmd_name = $cmd->cmd
+  $name = $cmd->cmd
 
 Return the name of the command.
 
@@ -574,45 +579,40 @@ may contain any of the following items:
 
 =over
 
-=item an B<IPC::PrettyPipe::Arg> object
+=item *
 
-The is used directly (not copied!).
+an B<L<IPC::PrettyPipe::Arg>> object
 
-=item a string
+=item *
 
-This specifies the argument's name and indicates that it takes no
-value.  However, if it matches a stream operation, it will cause a new
-I/O stream to be attached to the command.  If the operation requires
-an additional parameter, the next value in C<@arguments> will be used
-for that parameter.
+A scalar, representing an argument without a value.
 
-=item an arrayref
+=item *
 
-This must contain I<pairs> of names and values.  The arguments will be
-supplied to the command in the order they appear in the array.
+An arrayref with pairs of names and values.  The arguments will be supplied to the
+command in the order they appear.
 
-=item a hashref
+=item *
 
-This specifies one or more pairs of names and values.
-The arguments will be supplied to the command in a random order.
+A hashref with pairs of names and values. The arguments will be supplied to the
+command in a random order.
 
-=item an B<IPC::PrettyPipe::Arg::Format> object
+=item *
 
-B<ffadd> keeps a local copy of the C<argsep> and C<argpfx> attributes for
-use when creating new B<IPC::PrettyPipe::Arg> objects.  The local copy
-may be modified by passing in B<IPC::PrettyPipe::Arg::Format>
-objects.  This is typically only useful when using
-B<IPC::PrettyPipe::DSL>, which provides a simpler interface.
+An B<L<IPC::PrettyPipe::Arg::Format>> object, specifying the prefix
+and separator attributes for successive arguments.
 
-=item a B<IPC::PrettyPipe::Stream> object
+=item *
 
+An B<L<IPC::PrettyPipe::Stream>> object
 
-=item a stream specification and optional file name
+=item *
 
-Stream specifications are strings which define input and output
-streams for the command.  Stream specifications are defined in
-L<IPC::PrettyPipe::Stream:Utils>.  Filenames (if required) should be
-specified directly after the specification.
+A string which matches a stream specification
+(L<IPC::PrettyPipe::Stream::Util/Stream Specification>), which will cause
+a new I/O stream to be attached to the command.  If the specification
+requires an additional parameter, the next value in C<@arguments> will be
+used for that parameter.
 
 =back
 
@@ -623,17 +623,16 @@ specified directly after the specification.
   $cmd->stream( $spec, $file );
 
 Add an I/O stream to the command.  It may be passed either a stream
-specification (see L<IPC::PrettyPipe::Stream::Utils>) or an
-B<IPC::PrettyPipe::Stream> object, which is used directly (not
-copied).
+specification (L<IPC::PrettyPipe::Stream::Util/Stream Specification>)
+or an B<L<IPC::PrettyPipe::Stream>> object.
 
-See L</IPC::PrettyPipe::Stream> for more information.
+See B<L<IPC::PrettyPipe::Stream>> for more information.
 
 =item B<streams>
 
   $streams = $cmd->streams
 
-Return an B<IPC::PrettyPipe::Queue> object containing the streams
+Return an B<L<IPC::PrettyPipe::Queue>> object containing the streams
 associated with the command.
 
 =item B<valmatch>
