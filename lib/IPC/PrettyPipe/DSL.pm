@@ -91,14 +91,14 @@ sub ppstream {
 
         unless ( 'HASH' eq ref $stream[0] ) {
 
-            unshift @stream, 'op';
+            unshift @stream, 'spec';
 
         }
     }
 
     elsif ( @stream == 2 ) {
 
-        @stream = zip @{ [ 'op', 'file' ] }, @stream;
+        @stream = zip @{ [ 'spec', 'file' ] }, @stream;
 
     }
 
