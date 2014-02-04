@@ -1,6 +1,6 @@
 # --8<--8<--8<--8<--
 #
-# Copyright (C) 2012 Smithsonian Astrophysical Observatory
+# Copyright (C) 2014 Smithsonian Astrophysical Observatory
 #
 # This file is part of IPC::PrettyPipe
 #

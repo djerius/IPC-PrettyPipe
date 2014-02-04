@@ -1,6 +1,6 @@
 # --8<--8<--8<--8<--
 #
-# Copyright (C) 2012 Smithsonian Astrophysical Observatory
+# Copyright (C) 2014 Smithsonian Astrophysical Observatory
 #
 # This file is part of IPC::PrettyPipe
 #
@@ -670,7 +670,7 @@ precedence.
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2012 Smithsonian Astrophysical Observatory
+Copyright 2014 Smithsonian Astrophysical Observatory
 
 This software is released under the GNU General Public License.  You
 may find a copy at
