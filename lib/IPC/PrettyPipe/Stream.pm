@@ -76,7 +76,7 @@ has file => (
     predicate => 1,
 );
 
-has type => (
+has _type => (
     is       => 'rwp',
     isa      => Str,
     init_arg => undef,
@@ -123,7 +123,7 @@ sub BUILD {
       unless defined $opc->{type};
 
     $self->_set_requires_file( $opc->{param} );
-    $self->_set_type( $opc->{type} );
+    $self->_set__type( $opc->{type} );
 
     $self->${ \"_set_$_" }( $opc->{$_} )
       for grep { exists $opc->{$_} } qw[ N M Op ];
@@ -263,7 +263,7 @@ sub apply {
 
 	};
 
-	my $mth = '_' . $self->type;
+	my $mth = '_' . $self->_type;
 	return $self->$mth( $N, $M );
 }
 
