@@ -16,3 +16,6 @@ CVS/
 ^.hg
 ^MYMETA
 ^cover_db/
+autohtml
+.bak$
+.orig$
