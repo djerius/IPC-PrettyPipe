@@ -20,10 +20,12 @@ test_requires 'Test::File';
 test_requires 'Test::Lib';
 test_requires 'Test::More';
 test_requires 'Test::Most';
+test_requires 'Test::Trap';
 
 
 requires 'IO::ReStoreFH';
 requires 'IPC::Run';
+requires 'List::Util' => 1.34;
 requires 'Module::Load';
 requires 'Module::Path';
 requires 'Module::Runtime';
