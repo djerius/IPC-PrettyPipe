@@ -6,7 +6,6 @@ use warnings;
 use IPC::PrettyPipe::DSL ':all';
 
 use Test::Base;
-use DDP;
 
 filters { input => 'ppx' };
 
