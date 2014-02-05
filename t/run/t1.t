@@ -12,17 +12,17 @@ use File::pushd;
 
 use Test::Builder;
 
-use Probe::Perl;
+use Devel::FindPerl 'find_perl_interpreter';
+
 use File::Spec::Functions qw[ catfile ];
 
 use IPC::PrettyPipe::DSL ':all';
 
 use t::run::utils;
 
-my $perl = Probe::Perl->find_perl_interpreter;
 
 my $testcmd = catfile( getcwd, 't', 'run', 'testprog.pl' );
-my @testcmd = ( $perl, $testcmd );
+my @testcmd = ( find_perl_interpreter, $testcmd );
 
 
 sub setup_prog {

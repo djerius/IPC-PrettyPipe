@@ -19,7 +19,7 @@ author_requires 'Test::Perl::Critic';
 tests_recursive;
 
 test_requires 'File::pushd';
-test_requires 'Probe::Perl';
+test_requires 'Devel::FindPerl';
 test_requires 'Test::Base';
 test_requires 'Test::Deep';
 test_requires 'Test::Exception';
