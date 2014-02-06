@@ -1,10 +1,19 @@
 Revision history for Perl extension IPC::PrettyPipe
 
-0.01     2014-02-04T17:54:09-0500
+0.01_01	2014-02-05T18:59:08-0500
 
-      - first public release
+  [BUG FIX]
+    - remove errant 'use DDP' statement
+
+  [OTHER]
+    - switch from Probe::Perl to Devel::FindPerl
 
 
-0.00     Mon Sep 10 11:36:14 EDT 2012
+0.01	2014-02-04T17:54:09-0500
 
-      - forked from private IPC::PipeC module
+    - first public release
+
+
+0.00	Mon Sep 10 11:36:14 EDT 2012
+
+    - forked from private IPC::PipeC module

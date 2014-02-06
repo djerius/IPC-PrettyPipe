@@ -19,3 +19,5 @@ CVS/
 autohtml
 .bak$
 .orig$
+^extlib/
+^dists/
