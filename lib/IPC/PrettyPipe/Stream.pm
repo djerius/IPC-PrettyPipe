@@ -293,7 +293,7 @@ B<IPC::PrettyPipe::Stream> - An I/O stream for an B<L<IPC::PrettyPipe::Cmd>> com
 =head1 DESCRIPTION
 
 B<IPC::PrettyPipe::Stream> objects represent I/O streams attached to
-either B<IPC::PrettyPipe> or B<IPC::PrettyPipe::Cmd> objects.
+either B<L<IPC::PrettyPipe>> or B<L<IPC::PrettyPipe::Cmd>> objects.
 
 =head1 METHODS
 
@@ -385,8 +385,8 @@ component.
 Returns a subroutine which will implement the stream operations and
 and a list of filehandles or descriptors which would be affected.
 This routine is used by backend wrappers in conjunction with
-B<IPC::ReStoreFH> to handle pipe level stream operations (rather than
-command stream operations, which are done by the actual backend
+B<L<IO::ReStoreFH>> to handle pipe level stream operations (rather
+than command stream operations, which are done by the actual backend
 modules).
 
 =back

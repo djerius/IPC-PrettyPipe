@@ -31,7 +31,7 @@ __END__
 
 =head1 NAME
 
-IPC::PrettyPipe::Executor - role for executor backends
+B<IPC::PrettyPipe::Executor> - role for executor backends
 
 =head1 SYNOPSIS
 

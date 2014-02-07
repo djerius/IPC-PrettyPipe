@@ -159,19 +159,19 @@ file descriptors are properly restored.
 
 =over
 
-=item C<run>
+=item B<run>
 
 Run the pipeline.
 
-=item C<start>
+=item B<start>
 
 Invoke the B<L<IPC::Run>> B<L<start|IPC::Run/start>> method.
 
-=item C<pump>
+=item B<pump>
 
 Invoke the B<L<IPC::Run>> B<L<pump|IPC::Run/pump>> method.
 
-=item C<finish>
+=item B<finish>
 
 Invoke the B<L<IPC::Run>> B<L<finish|IPC::Run/finish>> method.
 

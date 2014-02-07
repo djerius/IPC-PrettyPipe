@@ -202,10 +202,10 @@ Arguments which are options may have I<prefixes>, and options which
 have values may have their names separated from their values by a
 I<separator> string.
 
-The B<ppipe>, B<ppcmd>, and B<pparg> functions are used to create
+The B<L</ppipe>>, B<L</ppcmd>>, and B<L</pparg>> functions are used to create
 pipelines, commands, and arguments.
 
-The B<argpfx>, and B<argsep> functions are used to change the argument
+The B<L</argpfx>>, and B<L</argsep>> functions are used to change the argument
 prefix and separator strings.  Calls to these are embeded in lists of
 arguments and commands, and change the argument prefixes and separator
 strings for the succeeding entries.  These are called I<argument
@@ -263,7 +263,7 @@ should immediately follow the object or string specification.
 
 
 
-B<ppipe> creates an B<IPC::PrettyPipe> object.  It is passed (in order)
+B<ppipe> creates an B<L<IPC::PrettyPipe>> object.  It is passed (in order)
 
 =over
 
@@ -420,7 +420,7 @@ An optional value.
   $stream = ppstream $spec;
   $stream = ppstream $spec, $file;
 
-B<ppstream> creates an B<IPC::PrettyPipe::Stream> object.
+B<ppstream> creates an B<L<IPC::PrettyPipe::Stream>> object.
 It is passed (in order):
 
 =over

@@ -31,7 +31,7 @@ __END__
 
 =head1 NAME
 
-IPC::PrettyPipe::Renderer - role for renderer backends
+B<IPC::PrettyPipe::Renderer> - role for renderer backends
 
 =head1 SYNOPSIS
 

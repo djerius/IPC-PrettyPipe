@@ -467,7 +467,7 @@ Its elements are processed with the B<L</ffadd>> method.
 
 =back
 
-=item argpfx, argsep
+=item C<argpfx>, C<argsep>
 
 I<Optional>.  The default prefix and separation attributes for
 command arguments.  See B<L<IPC::PrettyPipe::Arg>> for more
