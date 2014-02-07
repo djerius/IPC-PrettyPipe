@@ -154,6 +154,9 @@ subtest 'single command; 2>&1 ' => sub {
 
 subtest 'single command; fd < ; fd >; pipe stderr/out capture' => sub {
 
+    plan skip_all => 'redirecting FD>2 not possible on Win32'
+	if $^O =~ /Win32/i;
+
     my $dir = tempd();
 
     my %fds = setup_prog( 'test1', 3 => 'r', 4 => 'w' );
@@ -204,6 +207,9 @@ subtest 'single command; fd < ; fd >; pipe stderr/out capture' => sub {
 };
 
 subtest 'two commands; fd < ; fd >; pipe stderr/out capture' => sub {
+
+    plan skip_all => 'redirecting FD>2 not possible on Win32'
+	if $^O =~ /Win32/i;
 
     my $dir = tempd();
 
