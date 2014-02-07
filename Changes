@@ -1,5 +1,11 @@
 Revision history for Perl extension IPC::PrettyPipe
 
+0.01_02 2014-02-07T06:15:35-0500
+
+  [TEST FIX]
+    - IPC::Run can't redirect fd's > 2 on Win32; skip tests which do
+      that
+
 0.01_01	2014-02-05T18:59:08-0500
 
   [BUG FIX]
