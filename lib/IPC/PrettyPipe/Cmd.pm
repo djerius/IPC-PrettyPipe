@@ -609,7 +609,7 @@ An B<L<IPC::PrettyPipe::Stream>> object
 =item *
 
 A string which matches a stream specification
-(L<IPC::PrettyPipe::Stream::Util/Stream Specification>), which will cause
+(L<IPC::PrettyPipe::Stream::Utils/Stream Specification>), which will cause
 a new I/O stream to be attached to the command.  If the specification
 requires an additional parameter, the next value in C<@arguments> will be
 used for that parameter.
@@ -623,7 +623,7 @@ used for that parameter.
   $cmd->stream( $spec, $file );
 
 Add an I/O stream to the command.  It may be passed either a stream
-specification (L<IPC::PrettyPipe::Stream::Util/Stream Specification>)
+specification (L<IPC::PrettyPipe::Stream::Utils/Stream Specification>)
 or an B<L<IPC::PrettyPipe::Stream>> object.
 
 See B<L<IPC::PrettyPipe::Stream>> for more information.

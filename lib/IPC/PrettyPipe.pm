@@ -604,7 +604,7 @@ A command name (i.e. a string), for a command without arguments.
 =item *
 
 A string which matches a stream specification
-(L<IPC::PrettyPipe::Stream::Util/Stream Specification>), which will cause
+(L<IPC::PrettyPipe::Stream::Utils/Stream Specification>), which will cause
 a new I/O stream to be attached to the pipeline.  If the specification
 requires an additional parameter, the next value in C<@cmds> will be
 used for that parameter.
@@ -653,7 +653,7 @@ Execute the pipeline.
   $pipe->stream( $stream_spec, $file );
 
 Add an I/O stream to the pipeline.  See
-L<IPC::PrettyPipe::Stream::Util/Stream Specification> for more
+L<IPC::PrettyPipe::Stream::Utils/Stream Specification> for more
 information.
 
 =item B<streams>

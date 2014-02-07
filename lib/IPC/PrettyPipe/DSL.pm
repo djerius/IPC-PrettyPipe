@@ -214,7 +214,7 @@ Modifiers>.
 
 To specify stream redirection for either pipelines or commands, insert
 either a B<L<IPC::PrettyPipe::Stream>> object or a string stream
-specification (see L<IPC::PrettyPipe::Stream::Util/Stream
+specification (see L<IPC::PrettyPipe::Stream::Utils/Stream
 Specification>).  If the redirection requires another parameter, it
 should immediately follow the object or string specification.
 
@@ -317,7 +317,7 @@ and arguments which follow.
 
 =item *
 
-A stream specification (L<IPC::PrettyPipe::Stream::Util/Stream
+A stream specification (L<IPC::PrettyPipe::Stream::Utils/Stream
 Specification>), or an B<L<IPC::PrettyPipe::Stream>> object. If the
 specification requires an additional parameter, the next value in
 C<@args> is used.
@@ -377,7 +377,7 @@ command in a random order;
 =item *
 
 B<L<IPC::PrettyPipe::Stream>> objects or stream specifications
-(L<IPC::PrettyPipe::Stream::Util/Stream Specification>).  If the
+(L<IPC::PrettyPipe::Stream::Utils/Stream Specification>).  If the
 specification requires an additional parameter, the next value in
 C<@cmd_args> will be used for that parameter.
 
