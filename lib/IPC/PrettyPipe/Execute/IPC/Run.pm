@@ -127,7 +127,7 @@ with 'IPC::PrettyPipe::Executor';
 
 =head1 NAME
 
-B<IPC::PrettyPipe::Execute::IPC::Run> - execution backend using B<L<IPC::Run>>
+B<IPC::PrettyPipe::Execute::IPC::Run> - execution backend using B<IPC::Run>
 
 =head1 SYNOPSIS
 

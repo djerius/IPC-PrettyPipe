@@ -364,7 +364,7 @@ __END__
 
 =head1 NAME
 
-B<IPC::PrettyPipe::Cmd> - A command in an B<L<IPC::PrettyPipe>> pipeline
+B<IPC::PrettyPipe::Cmd> - A command in an B<IPC::PrettyPipe> pipeline
 
 =head1 SYNOPSIS
 

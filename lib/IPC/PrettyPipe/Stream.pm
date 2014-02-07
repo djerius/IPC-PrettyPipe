@@ -276,7 +276,7 @@ __END__
 
 =head1 NAME
 
-B<IPC::PrettyPipe::Stream> - An I/O stream for an B<L<IPC::PrettyPipe::Cmd>> command
+B<IPC::PrettyPipe::Stream> - An I/O stream for an B<IPC::PrettyPipe> pipline or command
 
 =head1 SYNOPSIS
 

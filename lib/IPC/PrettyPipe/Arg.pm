@@ -149,7 +149,7 @@ __END__
 
 =head1 NAME
 
-B<IPC::PrettyPipe::Arg> - An argument to an B<L<IPC::PrettyPipe::Cmd>> command
+B<IPC::PrettyPipe::Arg> - An argument to an B<IPC::PrettyPipe::Cmd> command
 
 =head1 SYNOPSIS
 

@@ -45,7 +45,7 @@ __END__
 
 =head1 NAME
 
-B<IPC::PrettyPipe::Queue::Element> - role for an element in an B<L<IPC::PrettyPipe::Queue>>
+B<IPC::PrettyPipe::Queue::Element> - role for an element in an B<IPC::PrettyPipe::Queue>
 
 =head1 SYNOPSIS
 

@@ -146,7 +146,7 @@ __END__
 
 =head1 NAME
 
-B<IPC::PrettyPipe::DSL> - shortcuts to building an B<L<IPC::PrettyPipe>> object
+B<IPC::PrettyPipe::DSL> - shortcuts to building an B<IPC::PrettyPipe> object
 
 =head1 SYNOPSIS
 

@@ -178,7 +178,7 @@ __END__
 
 =head1 NAME
 
-B<IPC::PrettyPipe::Render::Template::Tiny> - rendering backend using B<L<Template::Tiny>>
+B<IPC::PrettyPipe::Render::Template::Tiny> - rendering backend using B<Template::Tiny>
 
 =head1 SYNOPSIS
 
