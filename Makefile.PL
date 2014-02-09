@@ -30,7 +30,7 @@ test_requires 'Test::Most';
 test_requires 'Test::Trap';
 
 
-requires 'IO::ReStoreFH';
+requires 'IO::ReStoreFH' => 0.04;
 requires 'IPC::Run';
 requires 'List::Util' => 1.34;
 requires 'Module::Load';
@@ -44,5 +44,8 @@ requires 'Template::Tiny';
 requires 'Term::ANSIColor';
 requires 'Try::Tiny';
 requires 'parent';
+
+requires 'Win32::Console::ANSI'
+    if $^O =~ /Win32/i;
 
 WriteAll;
