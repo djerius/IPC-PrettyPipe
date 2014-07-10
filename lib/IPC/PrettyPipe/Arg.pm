@@ -232,6 +232,12 @@ Get or set the value of the C<pfx> attribute.
 
 Get or set the value of the C<sep> attribute.
 
+=item B<has_value>
+
+  $bool = $self->has_value
+
+Returns true if the argument has been assigned a value.
+
 =item B<has_blank_value>
 
   $bool = $self->has_blank_value
