@@ -33,6 +33,7 @@ test_requires 'Test::Trap';
 requires 'IO::ReStoreFH' => 0.04;
 requires 'IPC::Run';
 requires 'List::Util' => 1.34;
+requires 'List::MoreUtils';
 requires 'Module::Load';
 requires 'Module::Runtime';
 requires 'Moo' => '1.001000';
