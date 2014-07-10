@@ -491,7 +491,7 @@ B<L<IPC::PrettyPipe::DSL>>.
 
 B<L<IPC::PrettyPipe>> doesn't render a pipeline directly; instead it
 passes that job on to another object (which must consume the
-B<L<IPC::PrettyPipe::Render>> role).
+B<L<IPC::PrettyPipe::Renderer>> role).
 
 By default B<IPC::PrettyPipe> provides a renderer which uses
 B<L<Template::Tiny>> to render a pipeline as if it were to be fed to a
@@ -504,7 +504,7 @@ replaced via the B<L</renderer>> attribute.
 
 Just as with rendering, B<IPC::PrettyPipe> doesn't execute a pipeline
 on its own.  Instead it calls upon another object (which must consume
-the B<L<IPC::PrettyPipe::Execute>> role).  By default it provides an
+the B<L<IPC::PrettyPipe::Executor>> role).  By default it provides an
 executor which uses B<L<IPC::Run>> to run the pipeline.  The executor
 may be replaced via the B<L</executor>> attribute.
 
