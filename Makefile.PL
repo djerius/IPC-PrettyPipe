@@ -34,7 +34,6 @@ requires 'IO::ReStoreFH' => 0.04;
 requires 'IPC::Run';
 requires 'List::Util' => 1.34;
 requires 'Module::Load';
-requires 'Module::Path';
 requires 'Module::Runtime';
 requires 'Moo' => '1.001000';
 requires 'Type::Tiny' => 0.038;

@@ -27,10 +27,9 @@ our $VERSION = '0.02';
 
 use Carp;
 
-use List::Util qw[ sum ];
+use List::Util qw[ sum first ];
 use Module::Load qw[ load ];
-use Module::Path qw[ module_path ];
-use Module::Runtime 'compose_module_name';
+use Module::Runtime qw[ check_module_name compose_module_name use_package_optimistically ];
 use Safe::Isa;
 use Try::Tiny;
 
@@ -409,10 +408,17 @@ sub _backend_factory {
 
     my ( $self, $type, $req ) = ( shift, shift, shift );
 
-    my $module = compose_module_name( "IPC::PrettyPipe::$type", $req );
+    check_module_name( $req );
 
-    croak( "unknown $type ($req => $module)\n" )
-      unless defined module_path( $module );
+    my $role = compose_module_name( __PACKAGE__,
+				    { Render => 'Renderer',
+				      Execute => 'Executor'}->{$type} );
+
+    my $module = first { use_package_optimistically($_)->DOES( $role ) } $req,
+	  compose_module_name( "IPC::PrettyPipe::$type", $req );
+
+    croak( "requested $type module ($req) either doesn't exist or doesn't consume $role\n" )
+      if ! defined $module;
 
     load $module;
 
