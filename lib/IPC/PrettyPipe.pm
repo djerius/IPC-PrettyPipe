@@ -320,27 +320,27 @@ sub stream {
 
     my $self = shift;
 
-    my $op = shift;
+    my $spec = shift;
 
-    if ( $op->$_isa( 'IPC::PrettyPipe::Stream' ) ) {
+    if ( $spec->$_isa( 'IPC::PrettyPipe::Stream' ) ) {
 
         croak( "too many arguments\n" )
           if @_;
 
-        $self->streams->push( $op );
+        $self->streams->push( $spec );
 
     }
 
-    elsif ( !ref $op ) {
+    elsif ( !ref $spec ) {
 
         $self->streams->push(
-          IPC::PrettyPipe::Stream->new( op => $op, +@_ ? ( file => @_ ) : () )
+          IPC::PrettyPipe::Stream->new( spec => $spec, +@_ ? ( file => @_ ) : () )
 			     );
     }
 
     else {
 
-        croak( "illegal stream operator\n" );
+        croak( "illegal stream specification\n" );
 
     }
 

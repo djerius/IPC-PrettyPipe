@@ -130,9 +130,24 @@ test_attr(
 
     {
         desc    => 'ffadd stream',
-     dbg => 1,
         new     => [],
         methods => [ ffadd => [ ['ls'], '>', 'stdout' ] ],
+        compare => [
+            [ 'cmds->elements->[0]', { cmd => 'ls' } ],
+            [
+                'streams->elements->[0]',
+                {
+                    Op   => '>',
+                    file => 'stdout',
+                }
+            ],
+        ],
+    },
+
+    {
+        desc    => 'stream',
+        new     => [ cmds => 'ls' ],
+        methods => [ stream => [ '>', 'stdout' ] ],
         compare => [
             [ 'cmds->elements->[0]', { cmd => 'ls' } ],
             [
