@@ -44,6 +44,7 @@ requires 'Template::Tiny';
 requires 'Term::ANSIColor';
 requires 'Try::Tiny';
 requires 'parent';
+requires 'String::ShellQuote';
 
 requires 'Win32::Console::ANSI'
     if $^O =~ /Win32/i;

@@ -84,22 +84,22 @@ has template => (
 [% END -%]
 [%- FOREACH cmd IN pipe.cmds.elements %]
 [%- IF cmd.first %]  [% ELSE %]\t\\
-| [% END %][% color.cmd.cmd %][% cmd.cmd %][% color.reset %]
+| [% END %][% color.cmd.cmd %][% cmd.quoted_cmd %][% color.reset %]
 [%- FOREACH arg IN cmd.args.elements %]\t\\
     [% color.cmd.arg.pfx %][% arg.pfx %]
-[%- color.cmd.arg.name %][% arg.name %]
+[%- color.cmd.arg.name %][% arg.quoted_name %]
 [%- IF arg.has_value %][%- IF arg.sep %][% color.cmd.arg.sep %][% arg.sep %][% ELSE %] [% END %]
-[%- color.cmd.arg.value %][% IF arg.has_blank_value%]''[% ELSE %][% arg.value %][% END %][% END %][% color.reset %]
+[%- color.cmd.arg.value %][% arg.quoted_value %][% END %][% color.reset %]
 [%- END %]
 [%- FOREACH stream IN cmd.streams.elements %]\t\\
 [% color.cmd.stream.spec %][% stream.spec %]
-[%- IF stream.file %] [% END %][% color.cmd.stream.file %][% stream.file %][% color.reset %]
+[%- IF stream.has_file %] [% END %][% color.cmd.stream.file %][% stream.quoted_file %][% color.reset %]
 [%- END %]
 [%- END %]
 [%- IF pipe.streams.empty %][% ELSE %]\t\\
 )[% FOREACH stream IN pipe.streams.elements %]\t\\
 [% color.pipe.stream.spec %][% stream.spec -%]
-[%- IF stream.file %] [% END %][% color.pipe.stream.file %][% stream.file %][% color.reset %]
+[%- IF stream.has_file %] [% END %][% color.pipe.stream.file %][% stream.quoted_file %][% color.reset %]
 [%- END %]
 [%- END %]
 EOT

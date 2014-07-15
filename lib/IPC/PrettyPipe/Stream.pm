@@ -29,6 +29,7 @@ use Types::Standard qw[ Bool Str ];
 
 use IPC::PrettyPipe::Stream::Utils qw[ parse_spec ];
 
+use String::ShellQuote 'shell_quote';
 use IO::ReStoreFH;
 use POSIX ();
 use Fcntl qw[ O_RDONLY O_WRONLY O_CREAT O_TRUNC O_APPEND ];
@@ -144,6 +145,7 @@ sub BUILD {
     return;
 }
 
+sub quoted_file {  shell_quote( $_[0]->file )  }
 
 sub _redirect {
 
@@ -341,7 +343,16 @@ Retrieve the specification passed in to the constructor.
 
   $file = $stream->file;
 
-Retrieve the file passed in to the constructor (if one was).
+Return the file passed in to the constructor (if one was).
+
+=item B<quoted_file>
+
+  $file = $stream->quoted_file;
+
+Return the file passed in to the constructor (if one was),
+appropriately quoted for passing as a single word to a Bourne
+compatible shell.
+
 
 =item B<has_file>
 

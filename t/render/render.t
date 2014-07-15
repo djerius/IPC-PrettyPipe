@@ -85,11 +85,12 @@ ppipe [ 'cmd1', argpfx '-', [ 'a', 3 ] ];
 === One command w/ one arg + value, pfx, sep
 
 --- input
-ppipe [ 'cmd1', argpfx '--', argsep '=', [ 'a', 3 ] ];
+ppipe [ 'cmd1', argpfx '--', argsep '=', [ 'a', 3 ], [ 'b', 'is after a' ] ];
 
 --- expected
   cmd1	\
-    --a=3
+    --a=3	\
+    --b='is after a'
 
 === One command w/ two args
 
@@ -183,18 +184,18 @@ ppipe [ 'cmd1', '-a', '2>', 'stderr' ],
 === Two commands w/ args and two streams apiece
 
 --- input
-ppipe [ 'cmd1', '-a', '2>', 'stderr', '3>', 'output' ],
-      [ 'cmd2', '-b', '>', 'stdout', '2>', 'stderr' ];
+ppipe [ 'cmd1', '-a', '2>', 'stderr', '3>', 'out put' ],
+      [ 'cmd2', '-b', '>', 0, '2>', 'std err' ];
 
 --- expected
   cmd1	\
     -a	\
 2> stderr	\
-3> output	\
+3> 'out put'	\
 | cmd2	\
     -b	\
-> stdout	\
-2> stderr
+> 0	\
+2> 'std err'
 
 === Two commands + pipe streams
 
@@ -214,17 +215,17 @@ ppipe [ 'cmd1' ],
 === Two commands w/ args and one stream apiece + pipe streams
 
 --- input
-ppipe [ 'cmd1', '-a', '2>', 'stderr' ],
-      [ 'cmd2', '-b', '>', 'stdout' ],
-      '>', 'stdout';
+ppipe [ 'cmd 1', '-a', '2>', 'std err' ],
+      [ 'cmd 2', '-b', '>', 'std out' ],
+      '>', 0;
 
 --- expected
 (	\
-  cmd1	\
+  'cmd 1'	\
     -a	\
-2> stderr	\
-| cmd2	\
+2> 'std err'	\
+| 'cmd 2'	\
     -b	\
-> stdout	\
+> 'std out'	\
 )	\
-> stdout
+> 0

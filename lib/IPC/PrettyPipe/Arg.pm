@@ -24,6 +24,8 @@ package IPC::PrettyPipe::Arg;
 use Carp;
 
 use Moo;
+use String::ShellQuote;
+
 use Types::Standard qw[ Str ];
 
 has name => (
@@ -81,6 +83,11 @@ sub BUILDARGS {
 
     return {@_};
 }
+
+sub quoted_name {  shell_quote( $_[0]->name )  }
+
+sub quoted_value {  shell_quote( $_[0]->value )  }
+
 
 # for render templates
 sub has_blank_value {
@@ -231,6 +238,32 @@ Get or set the value of the C<pfx> attribute.
   $self->sep( $new_value );
 
 Get or set the value of the C<sep> attribute.
+
+=item B<name>
+
+  $name = $self->name;
+
+The argument's name;
+
+=item B<quoted_name>
+
+  $name = $self->quoted_name;
+
+The argument's name, appropriately quoted for passing as a
+single word to a Bourne compatible shell.
+
+=item B<value>
+
+  $value = $self->value;
+
+The argument's value;
+
+=item B<quoted_value>
+
+  $value = $self->quoted_value;
+
+The argument's value, appropriately quoted for passing as a
+single word to a Bourne compatible shell.
 
 =item B<has_value>
 

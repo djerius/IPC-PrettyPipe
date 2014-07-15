@@ -41,6 +41,8 @@ use IPC::PrettyPipe::Types -all;
 use IPC::PrettyPipe::Queue;
 use IPC::PrettyPipe::Arg::Format;
 
+use String::ShellQuote 'shell_quote';
+
 with 'IPC::PrettyPipe::Queue::Element';
 
 IPC::PrettyPipe::Arg::Format
@@ -115,6 +117,8 @@ sub BUILD {
 
     return;
 }
+
+sub quoted_cmd {  shell_quote( $_[0]->cmd )  }
 
 sub add {
 
@@ -569,6 +573,13 @@ affects new, not existing, arguments;
   $name = $cmd->cmd
 
 Return the name of the command.
+
+=item B<quoted_cmd>
+
+  $name = $cmd->quoted_cmd
+
+Return the name of the command, appropriately quoted for passing as a
+single word to a Bourne compatible shell.
 
 =item B<ffadd>
 
