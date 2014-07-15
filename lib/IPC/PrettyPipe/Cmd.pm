@@ -552,10 +552,10 @@ This will override the format attributes for this argument only.
 
 =item B<args>
 
-  $args = $cmd->args
+  $args = $cmd->args;
 
-Returns an B<L<IPC::PrettyPipe::Queue>> object containing the
-arguments associated with the command.
+Return a B<L<IPC::PrettyPipe::Queue>> object containing the
+B<L<IPC::PrettyPipe::Arg>> objects associated with the command.
 
 =item B<argpfx>,
 
@@ -643,8 +643,8 @@ See B<L<IPC::PrettyPipe::Stream>> for more information.
 
   $streams = $cmd->streams
 
-Return an B<L<IPC::PrettyPipe::Queue>> object containing the streams
-associated with the command.
+Return a B<L<IPC::PrettyPipe::Queue>> object containing the
+B<L<IPC::PrettyPipe::Stream>> objects associated with the command.
 
 =item B<valmatch>
 

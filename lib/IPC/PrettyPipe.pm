@@ -640,6 +640,13 @@ arguments; it does not affect existing arguments.
 
 See B<L<IPC::PrettyPipe::Arg>> for more information.
 
+=item B<cmds>
+
+  $cmds = $pipe->cmds;
+
+Return a B<L<IPC::PrettyPipe::Queue>> object containing the
+B<L<IPC::PrettyPipe::Cmd>> objects associated with the pipe.
+
 =item B<render>
 
   my $string = $pipe->render
@@ -666,8 +673,8 @@ information.
 
   $streams = $pipe->streams
 
-Return the streams associated with the command as an arrayref of
-B<L<IPC::PrettyPipe::Stream>> objects.
+Return a B<L<IPC::PrettyPipe::Queue>> object containing the
+B<L<IPC::PrettyPipe::Stream>> objects associated with the pipe.
 
 =item B<valmatch>
 
