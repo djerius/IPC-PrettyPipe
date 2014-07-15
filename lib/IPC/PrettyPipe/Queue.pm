@@ -40,6 +40,8 @@ has elements => (
 
 sub empty { ! !!@{ $_[0]->elements } }
 
+sub nelements { scalar @{ $_[0]->elements } }
+
 sub push {
 
     my ( $self, $elem ) = ( shift, shift );
@@ -123,6 +125,12 @@ Returns true if there are no elements in the queue.
   $elements = $q->elements;
 
 Returns an arrayref containing the queue's elements.
+
+=item nelements
+
+  $nelements = $q->nelements;
+
+Returns the number of elements in the queue.
 
 =back
 
