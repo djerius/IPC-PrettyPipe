@@ -1,5 +1,29 @@
 Revision history for Perl extension IPC::PrettyPipe
 
+0.03	2014-07-18T16:42:33-0400
+
+
+  [BUG FIX]
+
+    - renderers/executors provided as class names were not properly
+      handled
+
+    - adding a stream to a pipe object was broken
+
+    - the Template::Tiny renderer didn't properly quote arguments for
+      the shell
+
+  [ENHANCEMENT]
+
+    - commands, attribute names, and attribute values now have a
+      "quoted_" accessor which returns strings properly escaped for
+      use by a shell.
+
+  [BUILD FIX]
+
+    - add missing runtime dependency on List::MoreUtils
+
+
 0.02	2014-02-14T15:49:54-0500
 
     - promote to stable, CPAN Testers is all green!
