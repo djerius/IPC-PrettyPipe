@@ -1,5 +1,16 @@
 Revision history for Perl extension IPC::PrettyPipe
 
+0.03_0w 2014-07-21T17:29:59-0400
+
+  [BUILD FIX]
+
+     * remove extraneous dependency on Exporter::Tiny. Jumped the gun
+       on
+       http://www.cpantesters.org/cpan/report/0c9e658d-6c00-1014-9524-043f55012b15,
+       which reported a problem, but it's with Type::Tiny; this module
+       doesn't doesn't explicitly use it.  Might be a tester problem.
+
+
 0.03_01 2014-07-21T17:21:35-0400
 
   [BUILD FIX]

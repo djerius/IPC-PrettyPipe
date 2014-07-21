@@ -2,7 +2,6 @@
 
 on runtime => sub {
 
-    requires 'Exporter::Tiny';
     requires 'IO::ReStoreFH' => 0.04;
     requires 'IPC::Run';
     requires 'List::Util' => 1.34;

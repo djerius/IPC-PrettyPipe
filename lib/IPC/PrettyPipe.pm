@@ -23,7 +23,7 @@ package IPC::PrettyPipe;
 
 ## no critic (RequireUseStrict)
 
-our $VERSION = '0.03_01';
+our $VERSION = '0.03_02';
 
 use Carp;
 
