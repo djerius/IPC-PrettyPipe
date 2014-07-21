@@ -1,5 +1,10 @@
 Revision history for Perl extension IPC::PrettyPipe
 
+0.03_01 2014-07-21T17:21:35-0400
+
+  [BUILD FIX]
+     * add missing dependency on Exporter::Tiny
+
 0.03	2014-07-18T16:42:33-0400
 
 
