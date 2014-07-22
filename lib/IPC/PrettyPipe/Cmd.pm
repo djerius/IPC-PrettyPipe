@@ -466,6 +466,11 @@ An B<L<IPC::PrettyPipe::Arg>> object;
 
 =item *
 
+A hashref with pairs of names and values. The arguments will be
+supplied to the command in a random order.
+
+=item *
+
 An array reference containing more complex argument specifications.
 Its elements are processed with the B<L</ffadd>> method.
 
