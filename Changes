@@ -1,6 +1,13 @@
 Revision history for Perl extension IPC::PrettyPipe
 
-0.03_0w 2014-07-21T17:29:59-0400
+0.03_03 2014-08-05T12:58:51-0400
+
+  [BUG FIX]
+
+     * make work on Perl 5.10.0; see
+       http://www.cpantesters.org/cpan/report/15ef7e40-150f-11e4-b698-db7a2867dcfa
+
+0.03_02 2014-07-21T17:29:59-0400
 
   [BUILD FIX]
 
