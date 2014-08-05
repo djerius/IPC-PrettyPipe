@@ -27,7 +27,7 @@ our $VERSION = '0.03_02';
 
 use Carp;
 
-use List::Util qw[ sum first ];
+use List::Util qw[ sum ];
 use Module::Load qw[ load ];
 use Module::Runtime qw[ check_module_name compose_module_name use_package_optimistically ];
 use Safe::Isa;
@@ -414,8 +414,16 @@ sub _backend_factory {
 				    { Render => 'Renderer',
 				      Execute => 'Executor'}->{$type} );
 
-    my $module = first { use_package_optimistically($_)->DOES( $role ) } $req,
-	  compose_module_name( "IPC::PrettyPipe::$type", $req );
+    my $module;
+
+    for my $try (  $req,
+		   compose_module_name( "IPC::PrettyPipe::$type", $req ) ) {
+
+	next unless use_package_optimistically($try)->DOES( $role );
+
+	$module = $try;
+	last;
+    }
 
     croak( "requested $type module ($req) either doesn't exist or doesn't consume $role\n" )
       if ! defined $module;
