@@ -1,35 +1,39 @@
-# --8<--8<--8<--8<--
-#
-# Copyright (C) 2014 Smithsonian Astrophysical Observatory
-#
-# This file is part of IPC::PrettyPipe
-#
-# IPC::PrettyPipe is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or (at
-# your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# -->8-->8-->8-->8--
-
 package IPC::PrettyPipe::Arg::Format;
 
-use Moo;
-
-use Carp;
+# ABSTRACT: Encapsulate argument formatting attributes
 
 use Types::Standard qw[ Str ];
 
+use Moo;
+
+our $VERSION = '0.04';
+
 with 'IPC::PrettyPipe::Format';
 
+
 shadowable_attrs( qw[ pfx sep ] );
+
+use namespace::clean;
+
+
+=method B<new>
+
+  $fmt = IPC::PrettyPipe::Arg::Format->new( %attr );
+
+The constructor.
+
+=cut
+
+
+=attr pfx
+
+The prefix to apply to an argument
+
+=attr has_pfx
+
+A predicate for the C<pfx> attribute.
+
+=cut
 
 has pfx => (
     is        => 'rw',
@@ -38,6 +42,18 @@ has pfx => (
     predicate => 1,
 );
 
+=attr sep
+
+The string which will separate option names and values.  If C<undef> (the default),
+option names and values will be treated as separate entities.
+
+=attr has_sep
+
+A predicate for the C<sep> attribute.
+
+
+=cut
+
 has sep => (
     is        => 'rw',
     isa       => Str,
@@ -45,18 +61,26 @@ has sep => (
     predicate => 1,
 );
 
+=method copy_into
+
+  $self->copy_into( $dest, @attrs );
+
+Copy the C<sep> and C<pfx> attributes from the object to the destination object.
+
+=cut
+
 sub copy_into { $_[0]->_copy_attrs( $_[1], 'sep', 'pfx' ); }
 
 
 1;
 
+# COPYRIGHT
+
 __END__
 
-
-=head1 NAME
-
-B<IPC::PrettyPipe::Arg::Format> - Encapsulate argument formatting attributes
-
+=for stopwords
+pfx
+sep
 
 =head1 SYNOPSIS
 
@@ -67,45 +91,3 @@ B<IPC::PrettyPipe::Arg::Format> - Encapsulate argument formatting attributes
 =head1 DESCRIPTION
 
 This class encapsulates argument formatting attributes
-
-
-=head1 FUNCTIONS
-
-
-=over
-
-=item B<new>
-
-  $fmt = IPC::PrettyPipe::Arg::Format->new( %attr );
-
-The constructor.  The following attributes are available:
-
-=over
-
-=item pfx
-
-The prefix to apply to an argument
-
-=item sep
-
-The string which will separate option names and values.  If C<undef> (the default),
-option names and values will be treated as separate entities.
-
-=back
-
-
-=back
-
-=head1 COPYRIGHT & LICENSE
-
-Copyright 2014 Smithsonian Astrophysical Observatory
-
-This software is released under the GNU General Public License.  You
-may find a copy at
-
-   http://www.fsf.org/copyleft/gpl.html
-
-
-=head1 AUTHOR
-
-Diab Jerius E<lt>djerius@cfa.harvard.eduE<gt>

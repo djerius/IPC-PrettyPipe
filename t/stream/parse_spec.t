@@ -98,82 +98,82 @@ sub test {
     $par{desc} //= $par{op};
 
     lives_ok {
-	    my $got = parse_spec( $par{op} );
+            my $got = parse_spec( $par{op} );
 
-	    delete $got->{param};
+            delete $got->{param};
 
-	    is_deeply( $got, $par{expect} );
+            is_deeply( $got, $par{expect} );
     } $par{desc};
 
 }
 
 for my $test ( @tests ) {
 
-	my @pt = ( $test );
+        my @pt = ( $test );
 
-	my @ftests;
+        my @ftests;
 
-	# fill in N & M
-	my %r = ( N => [ 3, 45 ],
-	          M => [ 6, 78 ]
-	        );
+        # fill in N & M
+        my %r = ( N => [ 3, 45 ],
+                  M => [ 6, 78 ]
+                );
 
-	while ( @pt ) {
+        while ( @pt ) {
 
-		my $t = shift @pt;
+                my $t = shift @pt;
 
-		if ( my ( $x ) = $t->{op} =~ /(N|M)/ ) {
+                if ( my ( $x ) = $t->{op} =~ /(N|M)/ ) {
 
-			for my $r ( @{$r{$x}} ) {
+                        for my $r ( @{$r{$x}} ) {
 
-				my %nt = %$t;
-				$nt{expect} = { %{$nt{expect}} };
-				$nt{op} =~ s/$x/$r/;
-				$nt{expect}{$x} = $r;
+                                my %nt = %$t;
+                                $nt{expect} = { %{$nt{expect}} };
+                                $nt{op} =~ s/$x/$r/;
+                                $nt{expect}{$x} = $r;
 
-				push @pt, \%nt;
+                                push @pt, \%nt;
 
-			}
+                        }
 
-		}
+                }
 
-		else {
+                else {
 
-			push @ftests, $t
+                        push @ftests, $t
 
-		}
+                }
 
-	}
+        }
 
-	test( %$_ ) for @ftests;
+        test( %$_ ) for @ftests;
 }
 
 # test if param checking works
 
 lives_and {
 
-	my $op = parse_spec( '2>&3' );
+        my $op = parse_spec( '2>&3' );
 
     is( $op->{Op}, '>&' );
-	is( !!$op->{param}, !!0 );
+        is( !!$op->{param}, !!0 );
 
 } 'N>&M';
 
 lives_and {
 
-	my $op = parse_spec( '>' );
+        my $op = parse_spec( '>' );
 
     is( $op->{Op}, '>' );
-	is( $op->{param}, 1 );
+        is( $op->{param}, 1 );
 
 } '>';
 
 lives_and {
 
-	my $op = parse_spec( '>&' );
+        my $op = parse_spec( '>&' );
 
     is( $op->{Op}, '>&' );
-	is( $op->{param}, 1 );
+        is( $op->{param}, 1 );
 
 } '>&';
 

@@ -1,28 +1,11 @@
-# --8<--8<--8<--8<--
-#
-# Copyright (C) 2014 Smithsonian Astrophysical Observatory
-#
-# This file is part of IPC::PrettyPipe
-#
-# IPC::PrettyPipe is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or (at
-# your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# -->8-->8-->8-->8--
-
 package IPC::PrettyPipe::Stream::Utils;
+
+# ABSTRACT: support utilities for streams
 
 use strict;
 use warnings;
+
+our $VERSION = '0.04';
 
 use parent 'Exporter';
 
@@ -39,45 +22,47 @@ sub parse_spec {
     # for consistency, N is always the descriptor which needs to
     # be opened or dup'ed to. M is never touched.
 
-    $op =~ /^(?:
-    # <, N<
-    # >, N>
-    # >>, N>>
+    return {}
+      unless $op =~ /^(?:
+                 # <, N<
+                 # >, N>
+                 # >>, N>>
 
-      (?'redirect'
-          (?'N' \d+ (?!<<) )?  # don't match N<<
-          (?'Op'
-              (?: [<>]{1,2} )
-          )
-       )
+                   (?'redirect'
+                       (?'N' \d+ (?!<<) )?  # don't match N<<
+                       (?'Op'
+                           (?: [<>]{1,2} )
+                       )
+                    )
 
-    # >&, &>
-    | (?'redirect_stdout_stderr'
-          (?'Op' >& | &> )
-      )
+                 # >&, &>
+                 | (?'redirect_stdout_stderr'
+                       (?'Op' >& | &> )
+                   )
 
-    # N<&-
-    | (?'close'
-          (?'N'  \d+ )
-          (?'Op' <&  )
-          (?'M'  -   )
-       )
+                 # N<&-
+                 | (?'close'
+                       (?'N'  \d+ )
+                       (?'Op' <&  )
+                       (?'M'  -   )
+                    )
 
-    # M<&N
-    | (?'dup'
-          (?'M'  \d+ )
-          (?'Op' <&  )
-          (?'N'  \d+ )
-      )
+                 # M<&N
+                 | (?'dup'
+                       (?'M'  \d+ )
+                       (?'Op' <&  )
+                       (?'N'  \d+ )
+                   )
 
-    # N>&M
-    | (?'dup'
-          (?'N'  \d+ )
-          (?'Op' >&  )
-          (?'M'  \d+ )
-      )
+                 # N>&M
+                 | (?'dup'
+                       (?'N'  \d+ )
+                       (?'Op' >&  )
+                       (?'M'  \d+ )
+                   )
 
-      )$/x;
+               )$/x
+      ;
 
     # force a copy of the hash; it's magical and a simple return
     # of the elements doesn't work.
@@ -98,11 +83,9 @@ sub parse_spec {
 
 1;
 
+# COPYRIGHT
+
 __END__
-
-=head1 NAME
-
-B<IPC::PrettyPipe::Stream::Utils> - support utilities for streams
 
 =head1 SYNOPSIS
 
@@ -173,18 +156,3 @@ If the specification indicates that additional parameters are required
 C<param> will be set.
 
 =back
-
-
-=head1 COPYRIGHT & LICENSE
-
-Copyright 2014 Smithsonian Astrophysical Observatory
-
-This software is released under the GNU General Public License.  You
-may find a copy at
-
-   http://www.fsf.org/copyleft/gpl.html
-
-
-=head1 AUTHOR
-
-Diab Jerius E<lt>djerius@cfa.harvard.eduE<gt>

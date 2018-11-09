@@ -10,7 +10,7 @@ use Test::Exception;
 
 throws_ok {
 
-	pparg;
+        pparg;
 
 } qr/missing required/i, 'no args';
 

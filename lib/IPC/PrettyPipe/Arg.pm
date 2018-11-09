@@ -1,32 +1,17 @@
-# --8<--8<--8<--8<--
-#
-# Copyright (C) 2014 Smithsonian Astrophysical Observatory
-#
-# This file is part of IPC::PrettyPipe
-#
-# IPC::PrettyPipe is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or (at
-# your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# -->8-->8-->8-->8--
-
 package IPC::PrettyPipe::Arg;
+
+# ABSTRACT: An argument to an IPC::PrettyPipe::Cmd command
 
 use Carp;
 
-use Moo;
 use String::ShellQuote;
 
 use Types::Standard qw[ Str ];
+use IPC::PrettyPipe::Arg::Format;
+
+use Moo;
+
+our $VERSION = '0.04';
 
 has name => (
     is       => 'ro',
@@ -40,27 +25,37 @@ has value => (
     predicate => 1,
 );
 
-use IPC::PrettyPipe::Arg::Format;
+use namespace::clean;
+
+
+BEGIN {
 
 IPC::PrettyPipe::Arg::Format->shadow_attrs;
 
+}
+
 with 'MooX::Attributes::Shadow::Role';
 
+
 shadowable_attrs( 'fmt',
-		  values %{IPC::PrettyPipe::Arg::Format->shadowed_attrs }
-		);
+                  values %{IPC::PrettyPipe::Arg::Format->shadowed_attrs }
+                );
 
 with 'IPC::PrettyPipe::Queue::Element';
 
 has fmt => (
-	    is => 'ro',
-	    lazy => 1,
-	    handles => [ keys %{IPC::PrettyPipe::Arg::Format->shadowed_attrs} ],
-	    default => sub {
-		IPC::PrettyPipe::Arg::Format->new_from_attrs( shift );
-	    },
+            is => 'ro',
+            lazy => 1,
+            handles => [ keys %{IPC::PrettyPipe::Arg::Format->shadowed_attrs} ],
+            default => sub {
+                IPC::PrettyPipe::Arg::Format->new_from_attrs( shift );
+            },
 );
 
+
+=for Pod::Coverage BUILDARGS
+
+=cut
 
 # accept full attribute interface, or
 #  new( name );
@@ -108,18 +103,18 @@ sub render {
 
         if ( $fmt->has_sep ) {
 
-	    return join( '', $name, $fmt->sep, $self->value );
+            return join( '', $name, $fmt->sep, $self->value );
 
         }
-	else {
+        else {
 
-	    return $name, $self->value;
-	}
+            return $name, $self->value;
+        }
     }
 
     else {
 
-	return $name;
+        return $name;
     }
 
 }
@@ -152,11 +147,17 @@ sub valsubst {
 
 1;
 
+# COPYRIGHT
+
 __END__
 
-=head1 NAME
+=for stopwords
+Bourne
+pfx
+sep
+valmatch
+valsubst
 
-B<IPC::PrettyPipe::Arg> - An argument to an B<IPC::PrettyPipe::Cmd> command
 
 =head1 SYNOPSIS
 
@@ -221,7 +222,7 @@ A string to insert between the argument name and value when rendering.
 In some cases arguments must be a single string where the name and
 value are separated with an C<=> character; in other cases they
 are treated as separate entities.  If C<sep> is C<undef> it indicates
-that they are treated as separate entitites.  It defaults to C<undef>.
+that they are treated as separate entities.  It defaults to C<undef>.
 
 =back
 
@@ -306,17 +307,3 @@ If the argument has a value, perform the equivalent to
   $value =~ s/$pattern/$rep/;
 
 =back
-
-=head1 COPYRIGHT & LICENSE
-
-Copyright 2014 Smithsonian Astrophysical Observatory
-
-This software is released under the GNU General Public License.  You
-may find a copy at
-
-   http://www.fsf.org/copyleft/gpl.html
-
-
-=head1 AUTHOR
-
-Diab Jerius E<lt>djerius@cfa.harvard.eduE<gt>

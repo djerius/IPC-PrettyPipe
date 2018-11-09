@@ -1,41 +1,18 @@
-#! perl
-
-# --8<--8<--8<--8<--
-#
-# Copyright (C) 2014 Smithsonian Astrophysical Observatory
-#
-# This file is part of IPC::PrettyPipe
-#
-# IPC::PrettyPipe is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or (at
-# your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# -->8-->8-->8-->8--
-
-
-# This class exists primarily to provide a workaround for
-# Template::Tiny's lack of support for the Template Toolkit loop
-# constructs.  It adds an extra (ugly) layer on top of a simple
-# array.
-
-
 package IPC::PrettyPipe::Queue;
+
+# ABSTRACT: A simple queue
 
 use Moo;
 
+our $VERSION = '0.04';
+
+use namespace::clean;
+
+
 has elements => (
-	      is => 'ro',
-	      init_arg => undef,
-	      default => sub { [] },
+              is => 'ro',
+              init_arg => undef,
+              default => sub { [] },
 );
 
 sub empty { ! !!@{ $_[0]->elements } }
@@ -52,15 +29,15 @@ sub push {
     my $elements = $self->elements;
 
     if ( @$elements ) {
-	## no critic (ProhibitAccessOfPrivateData)
-	$elements->[-1]->_set_last( 0 );
-	$elem->_set_last( 1 );
-	$elem->_set_first( 0 );
+        ## no critic (ProhibitAccessOfPrivateData)
+        $elements->[-1]->_set_last( 0 );
+        $elem->_set_last( 1 );
+        $elem->_set_first( 0 );
     }
     else {
 
-	$elem->_set_last( 1 );
-	$elem->_set_first( 1 );
+        $elem->_set_last( 1 );
+        $elem->_set_first( 1 );
 
     }
 
@@ -71,12 +48,12 @@ sub push {
 
 1;
 
+# COPYRIGHT
 
 __END__
 
-=head1 NAME
-
-B<IPC::PrettyPipe::Queue> - A simple queue
+=for stopwords
+nelements
 
 =head1 SYNOPSIS
 

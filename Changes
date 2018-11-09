@@ -1,7 +1,13 @@
-Revision history for Perl extension IPC::PrettyPipe
+Revision history for {{$dist->name}}
+
+{{$NEXT}}
+
+  [BUILD FIX]
+
+     * switch from Module::Install to Dist::Zilla + EU::MM
+
 
 0.03_03 2014-08-05T12:58:51-0400
-
   [BUG FIX]
 
      * make work on Perl 5.10.0; see

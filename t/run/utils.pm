@@ -41,17 +41,17 @@ sub test_run {
 
     my %dispatch = (
 
-	die => sub { $Test->is_eq( $trap->die, $_[0], 'exception' ) },
+        die => sub { $Test->is_eq( $trap->die, $_[0], 'exception' ) },
 
         leaveby => sub { $Test->is_eq( $trap->leaveby, $_[0], 'leaveby' ) },
 
         stdout => sub { my @re = 'ARRAY' eq ref $_[0] ? @{$_[0]} : $_[0];
-			$Test->like( $trap->stdout, $_, "stdout: $_" ) foreach @re;
-		    },
+                        $Test->like( $trap->stdout, $_, "stdout: $_" ) foreach @re;
+                    },
 
         stderr => sub { my @re = 'ARRAY' eq ref $_[0] ? @{$_[0]} : $_[0];
-			$Test->like( $trap->stderr, $_, "stderr: $_" ) foreach @re;
-		    },
+                        $Test->like( $trap->stderr, $_, "stderr: $_" ) foreach @re;
+                    },
 
         expect_files => sub {
             local $Test::Builder::Level = $Test::Builder::Level + 1;
@@ -65,20 +65,20 @@ sub test_run {
 
             local $Test::Builder::Level = $Test::Builder::Level + 1;
 
-	    my $have_logfile = file_exists_ok( $logfile, 'exists' );
+            my $have_logfile = file_exists_ok( $logfile, 'exists' );
 
 
-	    if ( $have_logfile ) {
-		my $log;
+            if ( $have_logfile ) {
+                my $log;
 
-		ok( $log = eval { do $logfile }, 'parse' );
-		is_deeply( $log, $expected, 'content' );
+                ok( $log = eval { do $logfile }, 'parse' );
+                is_deeply( $log, $expected, 'content' );
 
-	    }
+            }
 
-	    else {
-		$Test->skip( "logfile $logfile doesn't exist" );
-	    }
+            else {
+                $Test->skip( "logfile $logfile doesn't exist" );
+            }
 
         },
 

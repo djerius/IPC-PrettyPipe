@@ -1,28 +1,11 @@
-# --8<--8<--8<--8<--
-#
-# Copyright (C) 2014 Smithsonian Astrophysical Observatory
-#
-# This file is part of IPC::PrettyPipe
-#
-# IPC::PrettyPipe is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or (at
-# your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# -->8-->8-->8-->8--
-
 package IPC::PrettyPipe::DSL;
+
+# ABSTRACT: shortcuts to building an B<IPC::PrettyPipe> object
 
 use strict;
 use warnings;
+
+our $VERSION = '0.04';
 
 use Carp;
 our @CARP_NOT;
@@ -34,9 +17,6 @@ use IPC::PrettyPipe;
 use IPC::PrettyPipe::Cmd;
 use IPC::PrettyPipe::Arg;
 use IPC::PrettyPipe::Stream;
-
-our $VERSION = '1.21';
-
 
 use parent 'Exporter';
 
@@ -141,12 +121,17 @@ sub ppipe {
 
 1;
 
+# COPYRIGHT
 
 __END__
 
-=head1 NAME
-
-B<IPC::PrettyPipe::DSL> - shortcuts to building an B<IPC::PrettyPipe> object
+=for stopwords
+argpfx
+argsep
+pparg
+ppcmd
+ppipe
+ppstream
 
 =head1 SYNOPSIS
 
@@ -197,7 +182,7 @@ building pipelines easier.
 =head1 FUNCTIONS
 
 
-Pipelines are created by chainging together commands with arguments.
+Pipelines are created by changing together commands with arguments.
 Arguments which are options may have I<prefixes>, and options which
 have values may have their names separated from their values by a
 I<separator> string.
@@ -206,7 +191,7 @@ The B<L</ppipe>>, B<L</ppcmd>>, and B<L</pparg>> functions are used to create
 pipelines, commands, and arguments.
 
 The B<L</argpfx>>, and B<L</argsep>> functions are used to change the argument
-prefix and separator strings.  Calls to these are embeded in lists of
+prefix and separator strings.  Calls to these are embedded in lists of
 arguments and commands, and change the argument prefixes and separator
 strings for the succeeding entries.  These are called I<argument
 attribute modifiers> and are documented in L</Argument Attribute
@@ -477,17 +462,3 @@ For example, after the above code is run, the following holds:
 
   $p->cmds->[2]->argpfx eq '--'
   $p->cmds->[2]->args->[0]->argpfx eq '--'
-
-=head1 COPYRIGHT & LICENSE
-
-Copyright 2014 Smithsonian Astrophysical Observatory
-
-This software is released under the GNU General Public License.  You
-may find a copy at
-
-   http://www.fsf.org/copyleft/gpl.html
-
-
-=head1 AUTHOR
-
-Diab Jerius E<lt>djerius@cfa.harvard.eduE<gt>

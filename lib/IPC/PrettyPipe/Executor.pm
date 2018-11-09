@@ -1,37 +1,20 @@
-# --8<--8<--8<--8<--
-#
-# Copyright (C) 2014 Smithsonian Astrophysical Observatory
-#
-# This file is part of IPC::PrettyPipe
-#
-# IPC::PrettyPipe is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or (at
-# your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# -->8-->8-->8-->8--
-
 package IPC::PrettyPipe::Executor;
+
+# ABSTRACT: role for executor backends
 
 use Moo::Role;
 
+our $VERSION = '0.04';
+
 requires qw[ run ];
+
+use namespace::clean;
 
 1;
 
+# COPYRIGHT
+
 __END__
-
-=head1 NAME
-
-B<IPC::PrettyPipe::Executor> - role for executor backends
 
 =head1 SYNOPSIS
 
@@ -58,22 +41,3 @@ The following methods must be defined:
 Execute the pipeline.
 
 =back
-
-
-=head1 COPYRIGHT & LICENSE
-
-Copyright 2014 Smithsonian Astrophysical Observatory
-
-This software is released under the GNU General Public License.  You
-may find a copy at
-
-   http://www.fsf.org/copyleft/gpl.html
-
-
-=head1 AUTHOR
-
-Diab Jerius E<lt>djerius@cfa.harvard.eduE<gt>
-
-=cut
-
-

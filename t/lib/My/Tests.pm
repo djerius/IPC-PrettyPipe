@@ -34,9 +34,9 @@ sub test_attr {
 
             lives_and {
 
-		my @new_args = 'CODE' eq ref( $test->{new}  )
-		             ? $test->{new}->() 
-			     : @{$test->{new}};
+                my @new_args = 'CODE' eq ref( $test->{new}  )
+                             ? $test->{new}->()
+                             : @{$test->{new}};
 
                 my $obj = $new->( @new_args );
 
@@ -47,16 +47,16 @@ sub test_attr {
 
                 if ( exists $test->{compare} ) {
 
-	                for my $stest ( @{ $test->{compare} } ) {
+                        for my $stest ( @{ $test->{compare} } ) {
 
-		                my ( $eval, $expected ) = @{ $stest } ;
+                                my ( $eval, $expected ) = @{ $stest } ;
 
-		                my $got = eval "\$obj->$eval";
-		                die( "error evaling $eval: $@\n" )
-		                  if $@;
-		                cmp_deeply( $got, methods( %{ $expected } ), "$test->{desc}:  $eval" );
+                                my $got = eval "\$obj->$eval";
+                                die( "error evaling $eval: $@\n" )
+                                  if $@;
+                                cmp_deeply( $got, methods( %{ $expected } ), "$test->{desc}:  $eval" );
 
-	                }
+                        }
 
                 }
 

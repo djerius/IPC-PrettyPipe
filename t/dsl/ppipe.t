@@ -45,10 +45,10 @@ subtest 'attribute isolation 2' => sub {
 
     my $p;
     lives_and { $p = ppipe
-		  argpfx( '-' ), [ 'cmd1', 'arg1' ],
-		  argpfx( '--' ), [ 'cmd2', 'arg2' ],
-		    [ 'cmd3', argpfx( '-' ), 'arg1', argpfx( '--' ), 'arg2' ]
-		} 'ppipe';
+                  argpfx( '-' ), [ 'cmd1', 'arg1' ],
+                  argpfx( '--' ), [ 'cmd2', 'arg2' ],
+                    [ 'cmd3', argpfx( '-' ), 'arg1', argpfx( '--' ), 'arg2' ]
+                } 'ppipe';
 
     is( $p->argpfx, '-' );
 

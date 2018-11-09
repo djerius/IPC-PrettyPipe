@@ -42,39 +42,39 @@ lives_and {
 
 lives_and {
 
-	my $arg = new(
-	              name   => 'a',
-	              value => '%OUTPUT%bar',
-	             );
+        my $arg = new(
+                      name   => 'a',
+                      value => '%OUTPUT%bar',
+                     );
 
-	$arg->valsubst( qr/%OUTPUT%/, 'foo' );
+        $arg->valsubst( qr/%OUTPUT%/, 'foo' );
 
-	is( $arg->value, 'foobar' );
+        is( $arg->value, 'foobar' );
 
 }
 'valsubst: value match';
 
 lives_and {
 
-	my $arg = new(
-	              name   => 'a',
-	             );
+        my $arg = new(
+                      name   => 'a',
+                     );
 
-	is( $arg->valsubst( qr/%OUTPUT%/, 'foo' ), 0 );
+        is( $arg->valsubst( qr/%OUTPUT%/, 'foo' ), 0 );
 
 }
 'valsubst: no value';
 
 lives_and {
 
-	my $arg = new(
-	              name   => 'a',
-	              value => '%OUTPUT%bar',
-	             );
+        my $arg = new(
+                      name   => 'a',
+                      value => '%OUTPUT%bar',
+                     );
 
-	$arg->valsubst( qr/%INPUT%/, 'foo' );
+        $arg->valsubst( qr/%INPUT%/, 'foo' );
 
-	is( $arg->value, '%OUTPUT%bar' );
+        is( $arg->value, '%OUTPUT%bar' );
 
 }
 'valsubst not match';

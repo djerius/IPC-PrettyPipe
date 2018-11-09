@@ -1,35 +1,27 @@
-# --8<--8<--8<--8<--
-#
-# Copyright (C) 2014 Smithsonian Astrophysical Observatory
-#
-# This file is part of IPC::PrettyPipe
-#
-# IPC::PrettyPipe is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or (at
-# your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# -->8-->8-->8-->8--
-
 package IPC::PrettyPipe::Execute::IPC::Run;
+
+# ABSTRACT: execution backend using IPC::Run
 
 use 5.10.0;
 
-use Moo;
 use Types::Standard qw[ InstanceOf ];
+
 
 use Try::Tiny;
 use IPC::Run ();
+use Carp ();
 
-use Carp;
+use Moo;
+our $VERSION = '0.04';
+
+use namespace::clean;
+
+
+=attr pipe
+
+The C<IPC::PrettyPipe> object which will provide the commands
+
+=cut
 
 has pipe => (
     is       => 'ro',
@@ -107,7 +99,7 @@ after 'run', 'finish' => sub {
 
     catch {
 
-        croak $_;
+        Carp::croak $_;
 
     }
 
@@ -124,10 +116,9 @@ with 'IPC::PrettyPipe::Executor';
 
 1;
 
+# COPYRIGHT
 
-=head1 NAME
-
-B<IPC::PrettyPipe::Execute::IPC::Run> - execution backend using B<IPC::Run>
+__END__
 
 =head1 SYNOPSIS
 
@@ -176,20 +167,3 @@ Invoke the B<L<IPC::Run>> B<L<pump|IPC::Run/pump>> method.
 Invoke the B<L<IPC::Run>> B<L<finish|IPC::Run/finish>> method.
 
 =back
-
-
-=head1 COPYRIGHT & LICENSE
-
-Copyright 2014 Smithsonian Astrophysical Observatory
-
-This software is released under the GNU General Public License.  You
-may find a copy at
-
-   http://www.fsf.org/copyleft/gpl.html
-
-
-=head1 AUTHOR
-
-Diab Jerius E<lt>djerius@cfa.harvard.eduE<gt>
-
-=cut

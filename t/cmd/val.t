@@ -41,77 +41,77 @@ lives_and {
 
 lives_and {
 
-	my $cmd = new( 'ls', [ '-a', '%OUTPUT%' ] );
-	$cmd->valsubst( qr/%OUTPUT%/, 'foo',);
+        my $cmd = new( 'ls', [ '-a', '%OUTPUT%' ] );
+        $cmd->valsubst( qr/%OUTPUT%/, 'foo',);
 
-	is( $cmd->args->elements->[0]->value, 'foo' );
+        is( $cmd->args->elements->[0]->value, 'foo' );
 }
 'valsubst: match';
 
 lives_and {
 
-	my $cmd = new( 'ls', [ '-a', '%OUTPUT%' ], [ '-b', '%OUTPUT%' ] );
-	$cmd->valsubst( qr/%OUTPUT%/, 'foo',
-	              lastvalue => 'last'
-	            );
+        my $cmd = new( 'ls', [ '-a', '%OUTPUT%' ], [ '-b', '%OUTPUT%' ] );
+        $cmd->valsubst( qr/%OUTPUT%/, 'foo',
+                      lastvalue => 'last'
+                    );
 
-	is( $cmd->args->elements->[0]->value, 'foo' );
-	is( $cmd->args->elements->[1]->value, 'last' );
+        is( $cmd->args->elements->[0]->value, 'foo' );
+        is( $cmd->args->elements->[1]->value, 'last' );
 }
 'valsubst: match, lastvalue, nmatch = 2';
 
 lives_and {
 
-	my $cmd = new( 'ls', [ '-a', '%OUTPUT%' ],
-		             [ '-b', '%OUTPUT%' ],
-		             [ '-c', '%OUTPUT%' ],
-		     );
-	$cmd->valsubst( qr/%OUTPUT%/, 'middle',
-			firstvalue => 'first',
-			lastvalue => 'last',
-	            );
+        my $cmd = new( 'ls', [ '-a', '%OUTPUT%' ],
+                             [ '-b', '%OUTPUT%' ],
+                             [ '-c', '%OUTPUT%' ],
+                     );
+        $cmd->valsubst( qr/%OUTPUT%/, 'middle',
+                        firstvalue => 'first',
+                        lastvalue => 'last',
+                    );
 
-	is( $cmd->args->elements->[0]->value, 'first' );
-	is( $cmd->args->elements->[1]->value, 'middle' );
-	is( $cmd->args->elements->[2]->value, 'last' );
+        is( $cmd->args->elements->[0]->value, 'first' );
+        is( $cmd->args->elements->[1]->value, 'middle' );
+        is( $cmd->args->elements->[2]->value, 'last' );
 }
 'valsubst: match, firstvalue + lastvalue, nmatch = 3';
 
 lives_and {
 
-	my $cmd = new( 'ls', [ '-a', '%OUTPUT%' ], [ '-b', '%INPUT%' ] );
-	$cmd->valsubst( qr/%OUTPUT%/, 'foo',
-	              lastvalue => 'last'
-	            );
+        my $cmd = new( 'ls', [ '-a', '%OUTPUT%' ], [ '-b', '%INPUT%' ] );
+        $cmd->valsubst( qr/%OUTPUT%/, 'foo',
+                      lastvalue => 'last'
+                    );
 
-	is( $cmd->args->elements->[0]->value, 'last' );
-	is( $cmd->args->elements->[1]->value, '%INPUT%' );
+        is( $cmd->args->elements->[0]->value, 'last' );
+        is( $cmd->args->elements->[1]->value, '%INPUT%' );
 }
 'valsubst: match, lastvalue, nmatch = 1';
 
 lives_and {
 
-	my $cmd = new( 'ls', [ '-a', '%OUTPUT%' ], [ '-b', '%INPUT%' ] );
-	is ( $cmd->valsubst( qr/%OUTPUT%/, 'foo',
-	                     firstvalue => 'first',
-	                 ),
-	     1);
+        my $cmd = new( 'ls', [ '-a', '%OUTPUT%' ], [ '-b', '%INPUT%' ] );
+        is ( $cmd->valsubst( qr/%OUTPUT%/, 'foo',
+                             firstvalue => 'first',
+                         ),
+             1);
 
-	is( $cmd->args->elements->[0]->value, 'first' );
-	is( $cmd->args->elements->[1]->value, '%INPUT%' );
+        is( $cmd->args->elements->[0]->value, 'first' );
+        is( $cmd->args->elements->[1]->value, '%INPUT%' );
 
 }
 'valsubst: match, firstvalue, nmatch = 1';
 
 lives_and {
 
-	my $cmd = new( 'ls', [ '-a', '%OUTPUT%' ], [ '-b', '%OUTPUT%' ] );
-	is ( $cmd->valsubst( qr/%OUTPUT%/, 'foo',
-	                     firstvalue => 'first',
-	                 ),
-	     2);
-	is( $cmd->args->elements->[0]->value, 'first' );
-	is( $cmd->args->elements->[1]->value, 'foo' );
+        my $cmd = new( 'ls', [ '-a', '%OUTPUT%' ], [ '-b', '%OUTPUT%' ] );
+        is ( $cmd->valsubst( qr/%OUTPUT%/, 'foo',
+                             firstvalue => 'first',
+                         ),
+             2);
+        is( $cmd->args->elements->[0]->value, 'first' );
+        is( $cmd->args->elements->[1]->value, 'foo' );
 
 }
 'valsubst: match, firstvalue';
@@ -119,13 +119,13 @@ lives_and {
 
 lives_and {
 
-	my $cmd = new( 'ls', [ '-a', '%OUTPUT%' ], [ '-b', '%OUTPUT%' ] );
-	$cmd->valsubst( qr/%OUTPUT%/,'foo',
-	                firstvalue => 'first',
-	                lastvalue => 'last'
-	              );
-	is( $cmd->args->elements->[0]->value, 'first' );
-	is( $cmd->args->elements->[1]->value, 'last' );
+        my $cmd = new( 'ls', [ '-a', '%OUTPUT%' ], [ '-b', '%OUTPUT%' ] );
+        $cmd->valsubst( qr/%OUTPUT%/,'foo',
+                        firstvalue => 'first',
+                        lastvalue => 'last'
+                      );
+        is( $cmd->args->elements->[0]->value, 'first' );
+        is( $cmd->args->elements->[1]->value, 'last' );
 
 }
 'valsubst: match, firstvalue, lastvalue';
@@ -133,22 +133,22 @@ lives_and {
 
 lives_and {
 
-	my $cmd = new( 'ls', [ '-a', '%OUTPUT%' ] );
+        my $cmd = new( 'ls', [ '-a', '%OUTPUT%' ] );
 
-	$cmd->valsubst( qr/%OUTPUT%/, 'foo', { lastvalue => 'bar' } );
+        $cmd->valsubst( qr/%OUTPUT%/, 'foo', { lastvalue => 'bar' } );
 
-	is( $cmd->args->elements->[0]->value, 'bar' );
+        is( $cmd->args->elements->[0]->value, 'bar' );
 }
 'valsubst: match, hash attr';
 
 lives_and {
 
-	my $cmd = new( 'ls', [ '-a', '%INPUT%' ] );
+        my $cmd = new( 'ls', [ '-a', '%INPUT%' ] );
 
-	is( $cmd->valsubst( qr/%OUTPUT%/, 'foo' ),
-	    0 );
+        is( $cmd->valsubst( qr/%OUTPUT%/, 'foo' ),
+            0 );
 
-	is( $cmd->args->elements->[0]->value, '%INPUT%' );
+        is( $cmd->args->elements->[0]->value, '%INPUT%' );
 }
 'valsubst: no match';
 
