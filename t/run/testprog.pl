@@ -37,7 +37,7 @@ while ( @ARGV ) {
 
     my $fd = shift @ARGV;
 
-    my ( $fh, my $mode )
+    my ( $fh, $mode )
       = @{ $fh[$fd]
           // [ IO::Handle->new_from_fd( $fd, $ARGV[0] ), shift @ARGV ] };
 
