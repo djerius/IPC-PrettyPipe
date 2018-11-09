@@ -2,6 +2,13 @@ Revision history for {{$dist->name}}
 
 {{$NEXT}}
 
+0.05      2018-11-09 16:24:42-05:00 America/New_York (TRIAL RELEASE)
+
+  [BUG FIX ]
+
+     * Fix RT# 108397. Finally. (srezic++)
+
+
 0.04      2018-11-07 17:01:33-05:00 America/New_York (TRIAL RELEASE)
 
   [BUILD FIX]
