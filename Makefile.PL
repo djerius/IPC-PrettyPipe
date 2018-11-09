@@ -42,7 +42,7 @@ my %WriteMakefileArgs = (
     "Test2::V0" => 0,
     "Test::More" => 0
   },
-  "VERSION" => "0.04",
+  "VERSION" => "0.05",
   "test" => {
     "TESTS" => "t/*.t t/arg/*.t t/cmd/*.t t/dsl/*.t t/ppipe/*.t t/render/*.t t/run/*.t t/stream/*.t"
   }
