@@ -2,6 +2,8 @@ Revision history for {{$dist->name}}
 
 {{$NEXT}}
 
+0.04      2018-11-07 17:01:33-05:00 America/New_York (TRIAL RELEASE)
+
   [BUILD FIX]
 
      * switch from Module::Install to Dist::Zilla + EU::MM
