@@ -6,7 +6,7 @@ use Types::Standard qw[ Str ];
 
 use Moo;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 with 'IPC::PrettyPipe::Format';
 

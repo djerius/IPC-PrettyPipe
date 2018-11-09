@@ -25,7 +25,7 @@ use String::ShellQuote 'shell_quote';
 
 use Moo;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 with 'IPC::PrettyPipe::Queue::Element';
 
