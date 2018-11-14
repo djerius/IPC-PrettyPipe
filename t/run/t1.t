@@ -1,16 +1,11 @@
 #!perl
 
-use strict;
-use warnings;
+use Test2::V0;
 
 use Cwd;
-use Test::Most;
-use Test::File;
 use Test::Trap qw[ :output(systemsafe) ];
 use IO::File;
 use File::pushd;
-
-use Test::Builder;
 
 use Devel::FindPerl 'find_perl_interpreter';
 
