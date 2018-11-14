@@ -4,7 +4,7 @@ package IPC::PrettyPipe::Executor;
 
 use Moo::Role;
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 requires qw[ run ];
 

@@ -11,7 +11,7 @@ use Types::Standard -all;
 use Type::Params qw[ validate ];
 
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 BEGIN {
     if ( $^O =~ /Win32/i ) {

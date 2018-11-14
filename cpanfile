@@ -15,14 +15,28 @@ requires "Type::Tiny" => "0.038";
 requires "parent" => "0";
 
 on 'test' => sub {
+  requires "Data::Dumper" => "0";
   requires "Devel::FindPerl" => "0";
   requires "ExtUtils::MakeMaker" => "0";
+  requires "File::Slurper" => "0";
   requires "File::Spec" => "0";
+  requires "File::Spec::Functions" => "0";
   requires "File::pushd" => "0";
+  requires "Getopt::Long" => "0";
+  requires "IO::File" => "0";
   requires "IO::Handle" => "0";
   requires "IPC::Open3" => "0";
+  requires "Moo" => "1.001000";
+  requires "Scalar::Util" => "0";
+  requires "Template::Tiny" => "0";
+  requires "Term::ANSIColor" => "0";
+  requires "Test2::API" => "0";
   requires "Test2::V0" => "0";
+  requires "Test::Base" => "0";
+  requires "Test::Lib" => "0";
   requires "Test::More" => "0";
+  requires "Test::Trap" => "0";
+  requires "Types::Standard" => "0";
 };
 
 on 'test' => sub {

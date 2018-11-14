@@ -33,16 +33,30 @@ my %WriteMakefileArgs = (
     "parent" => 0
   },
   "TEST_REQUIRES" => {
+    "Data::Dumper" => 0,
     "Devel::FindPerl" => 0,
     "ExtUtils::MakeMaker" => 0,
+    "File::Slurper" => 0,
     "File::Spec" => 0,
+    "File::Spec::Functions" => 0,
     "File::pushd" => 0,
+    "Getopt::Long" => 0,
+    "IO::File" => 0,
     "IO::Handle" => 0,
     "IPC::Open3" => 0,
+    "Moo" => "1.001000",
+    "Scalar::Util" => 0,
+    "Template::Tiny" => 0,
+    "Term::ANSIColor" => 0,
+    "Test2::API" => 0,
     "Test2::V0" => 0,
-    "Test::More" => 0
+    "Test::Base" => 0,
+    "Test::Lib" => 0,
+    "Test::More" => 0,
+    "Test::Trap" => 0,
+    "Types::Standard" => 0
   },
-  "VERSION" => "0.06",
+  "VERSION" => "0.07",
   "test" => {
     "TESTS" => "t/*.t t/arg/*.t t/cmd/*.t t/dsl/*.t t/ppipe/*.t t/render/*.t t/run/*.t t/stream/*.t"
   }
@@ -50,10 +64,15 @@ my %WriteMakefileArgs = (
 
 
 my %FallbackPrereqs = (
+  "Data::Dumper" => 0,
   "Devel::FindPerl" => 0,
   "ExtUtils::MakeMaker" => 0,
+  "File::Slurper" => 0,
   "File::Spec" => 0,
+  "File::Spec::Functions" => 0,
   "File::pushd" => 0,
+  "Getopt::Long" => 0,
+  "IO::File" => 0,
   "IO::Handle" => 0,
   "IO::ReStoreFH" => "0.04",
   "IPC::Open3" => 0,
@@ -65,13 +84,19 @@ my %FallbackPrereqs = (
   "Moo" => "1.001000",
   "MooX::Attributes::Shadow" => "0.05",
   "Safe::Isa" => 0,
+  "Scalar::Util" => 0,
   "String::ShellQuote" => 0,
   "Template::Tiny" => 0,
   "Term::ANSIColor" => 0,
+  "Test2::API" => 0,
   "Test2::V0" => 0,
+  "Test::Base" => 0,
+  "Test::Lib" => 0,
   "Test::More" => 0,
+  "Test::Trap" => 0,
   "Try::Tiny" => 0,
   "Type::Tiny" => "0.038",
+  "Types::Standard" => 0,
   "parent" => 0
 );
 

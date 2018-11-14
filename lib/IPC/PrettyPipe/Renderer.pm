@@ -4,7 +4,7 @@ package IPC::PrettyPipe::Renderer;
 
 use Moo::Role;
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 use namespace::clean;
 
