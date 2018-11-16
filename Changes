@@ -2,12 +2,20 @@ Revision history for {{$dist->name}}
 
 {{$NEXT}}
 
+0.08      2018-11-16 14:27:40-05:00 America/New_York
+
+
+      * No changes from previous release.
+      * Promote to stable.
+
+
 0.07      2018-11-15 10:03:28-05:00 America/New_York (TRIAL RELEASE)
 
 
   [BUILD FIX]
 
-     * previous release had an incomplete Makefile.PL, causing failures on Windows
+     * previous release had an incomplete Makefile.PL, causing
+       failures on Windows
 
      * note to self: don't release under Dist::Zilla::Shell.
        Dist::Zilla::Plugin::DynamicPrereqs isn't designed to be run in
