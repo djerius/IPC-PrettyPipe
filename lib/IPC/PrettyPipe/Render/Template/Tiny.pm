@@ -61,8 +61,7 @@ has template => (
 
     is => 'rw',
 
-    default => sub {
-        return <<"EOT";
+    default => <<"EOT",
 [% IF pipe.streams.empty %][% ELSE %](\t\\
 [% END -%]
 [%- FOREACH cmd IN pipe.cmds.elements %]
@@ -86,9 +85,6 @@ has template => (
 [%- END %]
 [%- END %]
 EOT
-    },
-
-
 );
 
 sub _colorize {
