@@ -33,17 +33,6 @@ BEGIN {
     IPC::PrettyPipe::Arg::Format->shadow_attrs( fmt => sub { 'arg' . shift } );
 }
 
-=for stopwords
-argfmt
-argpfx
-argsep
-cmds
-ffadd
-renderer
-valmatch
-valsubst
-
-=cut
 
 =attr argfmt
 
@@ -668,6 +657,18 @@ sub _storefh {
 # COPYRIGHT
 
 __END__
+
+=for stopwords
+argfmt
+argpfx
+argsep
+cmds
+ffadd
+renderer
+valmatch
+valsubst
+
+=cut
 
 =head1 SYNOPSIS
 
