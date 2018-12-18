@@ -30,7 +30,7 @@ use namespace::clean;
 
 BEGIN {
 
-IPC::PrettyPipe::Arg::Format->shadow_attrs;
+    IPC::PrettyPipe::Arg::Format->shadow_attrs;
 
 }
 
@@ -38,18 +38,17 @@ with 'MooX::Attributes::Shadow::Role';
 
 
 shadowable_attrs( 'fmt',
-                  values %{IPC::PrettyPipe::Arg::Format->shadowed_attrs }
-                );
+    values %{ IPC::PrettyPipe::Arg::Format->shadowed_attrs } );
 
 with 'IPC::PrettyPipe::Queue::Element';
 
 has fmt => (
-            is => 'ro',
-            lazy => 1,
-            handles => [ keys %{IPC::PrettyPipe::Arg::Format->shadowed_attrs} ],
-            default => sub {
-                IPC::PrettyPipe::Arg::Format->new_from_attrs( shift );
-            },
+    is      => 'ro',
+    lazy    => 1,
+    handles => [ keys %{ IPC::PrettyPipe::Arg::Format->shadowed_attrs } ],
+    default => sub {
+        IPC::PrettyPipe::Arg::Format->new_from_attrs( shift );
+    },
 );
 
 
@@ -79,9 +78,9 @@ sub BUILDARGS {
     return {@_};
 }
 
-sub quoted_name {  shell_quote( $_[0]->name )  }
+sub quoted_name { shell_quote( $_[0]->name ) }
 
-sub quoted_value {  shell_quote( $_[0]->value )  }
+sub quoted_value { shell_quote( $_[0]->value ) }
 
 
 # for render templates
@@ -97,7 +96,7 @@ sub render {
 
     my $fmt = $self->fmt;
 
-    my $name = ($fmt->has_pfx ? $fmt->pfx : '' ) . $self->name;
+    my $name = ( $fmt->has_pfx ? $fmt->pfx : '' ) . $self->name;
 
     if ( $self->has_value ) {
 

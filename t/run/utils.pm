@@ -45,13 +45,15 @@ sub test_run {
 
         leaveby => sub { is( $trap->leaveby, $_[0], 'leaveby' ) },
 
-        stdout => sub { my @re = 'ARRAY' eq ref $_[0] ? @{$_[0]} : $_[0];
-                        like( $trap->stdout, $_, "stdout: $_" ) foreach @re;
-                    },
+        stdout => sub {
+            my @re = 'ARRAY' eq ref $_[0] ? @{ $_[0] } : $_[0];
+            like( $trap->stdout, $_, "stdout: $_" ) foreach @re;
+        },
 
-        stderr => sub { my @re = 'ARRAY' eq ref $_[0] ? @{$_[0]} : $_[0];
-                        like( $trap->stderr, $_, "stderr: $_" ) foreach @re;
-                    },
+        stderr => sub {
+            my @re = 'ARRAY' eq ref $_[0] ? @{ $_[0] } : $_[0];
+            like( $trap->stderr, $_, "stderr: $_" ) foreach @re;
+        },
 
         expect_files => sub {
 

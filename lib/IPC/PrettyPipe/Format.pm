@@ -22,16 +22,16 @@ use namespace::clean;
 #
 # undefined values are the same as not specifying a value at all
 if ( 0 ) {
-around BUILDARGS => sub {
+    around BUILDARGS => sub {
 
-    my ( $orig, $class )  = ( shift, shift );
+        my ( $orig, $class ) = ( shift, shift );
 
-    my $attrs = $class->$orig( @_ );
+        my $attrs = $class->$orig( @_ );
 
-    delete @{$attrs}{ grep { ! defined $attrs->{$_} } keys %$attrs };
+        delete @{$attrs}{ grep { !defined $attrs->{$_} } keys %$attrs };
 
-    return $attrs;
-};
+        return $attrs;
+    };
 }
 
 sub _copy_attrs {
@@ -41,7 +41,7 @@ sub _copy_attrs {
     for my $attr ( @_ ) {
 
 
-        next unless $from->${\"has_$attr"};
+        next unless $from->${ \"has_$attr" };
 
         try {
             if ( defined( my $value = $from->$attr ) ) {
@@ -52,7 +52,7 @@ sub _copy_attrs {
 
             else {
 
-                $to->${\"clear_$attr"}
+                $to->${ \"clear_$attr" };
 
             }
         }
@@ -97,7 +97,7 @@ Clone the object;
 
 sub clone {
 
-    my $class = ref($_[0]);
+    my $class = ref( $_[0] );
     load $class;
 
     my $clone = $class->new;
@@ -139,7 +139,7 @@ it is taken from the Caller's class.
 sub new_from_hash {
 
     my $contained = shift;
-    my $hash = pop;
+    my $hash      = pop;
 
     my $container = shift || caller();
 
@@ -148,7 +148,7 @@ sub new_from_hash {
     my $shadowed = $contained->shadowed_attrs( $container );
 
     my %attr;
-    while( my ( $alias, $orig ) = each %{ $shadowed } ) {
+    while ( my ( $alias, $orig ) = each %{$shadowed} ) {
 
         $attr{$orig} = $hash->{$alias} if exists $hash->{$alias};
 

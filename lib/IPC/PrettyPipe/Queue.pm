@@ -10,12 +10,12 @@ use namespace::clean;
 
 
 has elements => (
-              is => 'ro',
-              init_arg => undef,
-              default => sub { [] },
+    is       => 'ro',
+    init_arg => undef,
+    default  => sub { [] },
 );
 
-sub empty { ! !!@{ $_[0]->elements } }
+sub empty { !!!@{ $_[0]->elements } }
 
 sub nelements { scalar @{ $_[0]->elements } }
 

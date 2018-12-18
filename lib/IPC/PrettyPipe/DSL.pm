@@ -21,13 +21,13 @@ use IPC::PrettyPipe::Stream;
 use parent 'Exporter';
 
 our %EXPORT_TAGS = (
-    construct  => [ qw( ppipe ppcmd pparg ppstream ) ],
-    attributes => [ qw( argpfx argsep ) ],
+    construct  => [qw( ppipe ppcmd pparg ppstream )],
+    attributes => [qw( argpfx argsep )],
 );
 
 ## no critic (ProhibitSubroutinePrototypes)
-sub argsep($)    { IPC::PrettyPipe::Arg::Format->new( sep => @_ )    };
-sub argpfx($)    { IPC::PrettyPipe::Arg::Format->new( pfx => @_ )    };
+sub argsep($) { IPC::PrettyPipe::Arg::Format->new( sep => @_ ) }
+sub argpfx($) { IPC::PrettyPipe::Arg::Format->new( pfx => @_ ) }
 
 
 our @EXPORT_OK = map { @{$_} } values %EXPORT_TAGS;
@@ -59,7 +59,8 @@ sub pparg {
 
     }
 
-    return IPC::PrettyPipe::Arg->new( @arg, ( @arg == 1 ? () : ( fmt => $fmt->clone ) ) );
+    return IPC::PrettyPipe::Arg->new( @arg,
+        ( @arg == 1 ? () : ( fmt => $fmt->clone ) ) );
 
 }
 

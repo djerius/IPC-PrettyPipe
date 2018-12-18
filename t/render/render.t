@@ -20,7 +20,7 @@ sub dump {
 sub ppx {
 
     my $pipe = eval( $_[0] )
-      or die( "error evaluation $_[0]: $@\n");
+      or die( "error evaluation $_[0]: $@\n" );
     $pipe->render( colorize => 0 );
 }
 

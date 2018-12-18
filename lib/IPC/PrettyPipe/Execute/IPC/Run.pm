@@ -9,7 +9,7 @@ use Types::Standard qw[ InstanceOf ];
 
 use Try::Tiny;
 use IPC::Run ();
-use Carp ();
+use Carp     ();
 
 use Moo;
 our $VERSION = '0.09';
@@ -90,9 +90,9 @@ after 'run', 'finish' => sub {
 
     try {
 
-	# get rid of harness first to avoid possible closing of file
-	# handles while the child is running.  of course the child
-	# shouldn't be running at this point, but what the heck
+        # get rid of harness first to avoid possible closing of file
+        # handles while the child is running.  of course the child
+        # shouldn't be running at this point, but what the heck
         $self->_clear_harness;
 
     }

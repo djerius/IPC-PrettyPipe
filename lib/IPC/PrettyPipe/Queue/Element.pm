@@ -9,14 +9,14 @@ use namespace::clean;
 our $VERSION = '0.09';
 
 has last => (
-    is => 'rwp',
-    default => sub { 0 },
+    is       => 'rwp',
+    default  => sub { 0 },
     init_arg => undef,
 );
 
 has first => (
-    is => 'rwp',
-    default => sub { 0 },
+    is       => 'rwp',
+    default  => sub { 0 },
     init_arg => undef,
 );
 

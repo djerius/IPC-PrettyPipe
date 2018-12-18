@@ -10,7 +10,8 @@ use Carp;
 
 use List::Util qw[ sum ];
 use Module::Load qw[ load ];
-use Module::Runtime qw[ check_module_name compose_module_name use_package_optimistically ];
+use Module::Runtime
+  qw[ check_module_name compose_module_name use_package_optimistically ];
 use Safe::Isa;
 use Try::Tiny;
 
@@ -54,10 +55,10 @@ commands.  May be overridden by L</argpfx> and L</argsep>.
 
 
 has argfmt => (
-  is => 'ro',
-  lazy => 1,
-  handles => IPC::PrettyPipe::Arg::Format->shadowed_attrs,
-  default => sub { IPC::PrettyPipe::Arg::Format->new_from_attrs( shift ) },
+    is      => 'ro',
+    lazy    => 1,
+    handles => IPC::PrettyPipe::Arg::Format->shadowed_attrs,
+    default => sub { IPC::PrettyPipe::Arg::Format->new_from_attrs( shift ) },
 );
 
 =attr argpfx
@@ -90,10 +91,10 @@ has streams => (
 
 
 has _init_cmds => (
-    is       => 'ro',
-    init_arg => 'cmds',
-    coerce   => AutoArrayRef->coercion,
-    isa => ArrayRef,
+    is        => 'ro',
+    init_arg  => 'cmds',
+    coerce    => AutoArrayRef->coercion,
+    isa       => ArrayRef,
     default   => sub { [] },
     predicate => 1,
     clearer   => 1,
@@ -124,7 +125,7 @@ has _executor_arg => (
 
 has _executor => (
     is      => 'rw',
-    isa     => ConsumerOf[ 'IPC::PrettyPipe::Executor' ],
+    isa     => ConsumerOf ['IPC::PrettyPipe::Executor'],
     handles => 'IPC::PrettyPipe::Executor',
     lazy    => 1,
     clearer => 1,
@@ -166,10 +167,10 @@ has _renderer_arg => (
     trigger  => sub { $_[0]->_clear_renderer },
 );
 
-has _renderer  => (
-    is       => 'rw',
-    isa     => ConsumerOf[ 'IPC::PrettyPipe::Renderer' ],
-    handles  => 'IPC::PrettyPipe::Renderer',
+has _renderer => (
+    is      => 'rw',
+    isa     => ConsumerOf ['IPC::PrettyPipe::Renderer'],
+    handles => 'IPC::PrettyPipe::Renderer',
     lazy    => 1,
     clearer => 1,
     default => sub {
@@ -179,9 +180,8 @@ has _renderer  => (
         ## no critic (ProhibitAccessOfPrivateData)
         return $backend->$_does( 'IPC::PrettyPipe::Renderer' )
           ? $backend
-          : $_[0]->_backend_factory( Render => $backend )
-          ;
-      },
+          : $_[0]->_backend_factory( Render => $backend );
+    },
 );
 
 =attr renderer
@@ -290,16 +290,18 @@ sub add {
 
         $cmd = delete $attr->{cmd};
 
-        croak( "cannot specify additional arguments when passing a Cmd object\n" )
+        croak(
+            "cannot specify additional arguments when passing a Cmd object\n" )
           if keys %$attr;
     }
 
     else {
 
-        $cmd = IPC::PrettyPipe::Cmd->new( cmd => $attr->{cmd},
-                                          argfmt => $argfmt->clone,
-                                          exists $attr->{args} ? ( args => $attr->{args} ) : (),
-                                        );
+        $cmd = IPC::PrettyPipe::Cmd->new(
+            cmd    => $attr->{cmd},
+            argfmt => $argfmt->clone,
+            exists $attr->{args} ? ( args => $attr->{args} ) : (),
+        );
     }
 
     $self->cmds->push( $cmd );
@@ -373,8 +375,11 @@ sub ffadd {
 
         elsif ( 'ARRAY' eq ref $t ) {
 
-            my $cmd = IPC::PrettyPipe::Cmd->new( cmd => shift( @$t ), argfmt => $argfmt->clone );
-            $cmd->ffadd( @$t);
+            my $cmd = IPC::PrettyPipe::Cmd->new(
+                cmd    => shift( @$t ),
+                argfmt => $argfmt->clone
+            );
+            $cmd->ffadd( @$t );
 
             $self->add( $cmd );
         }
@@ -457,8 +462,9 @@ sub stream {
     elsif ( !ref $spec ) {
 
         $self->streams->push(
-          IPC::PrettyPipe::Stream->new( spec => $spec, +@_ ? ( file => @_ ) : () )
-                             );
+            IPC::PrettyPipe::Stream->new(
+                spec => $spec,
+                +@_ ? ( file => @_ ) : () ) );
     }
 
     else {
@@ -487,7 +493,8 @@ sub valmatch {
     my $self    = shift;
     my $pattern = shift;
 
-    return sum 0, map { $_->valmatch( $pattern ) && 1 || 0 } @{ $self->cmds->elements };
+    return sum 0,
+      map { $_->valmatch( $pattern ) && 1 || 0 } @{ $self->cmds->elements };
 }
 
 =method valsubst
@@ -563,24 +570,25 @@ sub valsubst {
 
     my $self = shift;
 
-    my @args = ( shift, shift, @_ > 1 ? { @_ } : @_ );
+    my @args = ( shift, shift, @_ > 1 ? {@_} : @_ );
 
-    my ( $pattern, $value, $args ) =
-      validate( \@args,
-                RegexpRef,
-                Str,
-                Optional[ Dict[
-                            lastvalue  => Optional[ Str ],
-                            firstvalue => Optional[ Str ]
-                           ] ],
-              );
+    my ( $pattern, $value, $args ) = validate(
+        \@args,
+        RegexpRef,
+        Str,
+        Optional [
+            Dict [
+                lastvalue  => Optional [Str],
+                firstvalue => Optional [Str] ]
+        ],
+    );
 
     my $nmatch = $self->valmatch( $pattern );
 
     if ( $nmatch == 1 ) {
 
         ## no critic (ProhibitAccessOfPrivateData)
-        $args->{lastvalue} //= $args->{firstvalue} // $value;
+        $args->{lastvalue}  //= $args->{firstvalue} // $value;
         $args->{firstvalue} //= $args->{lastvalue};
 
     }
@@ -613,22 +621,25 @@ sub _backend_factory {
     check_module_name( $req );
 
     my $role = compose_module_name( __PACKAGE__,
-                                    { Render => 'Renderer',
-                                      Execute => 'Executor'}->{$type} );
+        {
+            Render  => 'Renderer',
+            Execute => 'Executor'
+        }->{$type} );
 
     my $module;
 
-    for my $try (  $req,
-                   compose_module_name( "IPC::PrettyPipe::$type", $req ) ) {
+    for my $try ( $req, compose_module_name( "IPC::PrettyPipe::$type", $req ) )
+    {
 
-        next unless use_package_optimistically($try)->DOES( $role );
+        next unless use_package_optimistically( $try )->DOES( $role );
 
         $module = $try;
         last;
     }
 
-    croak( "requested $type module ($req) either doesn't exist or doesn't consume $role\n" )
-      if ! defined $module;
+    croak(
+        "requested $type module ($req) either doesn't exist or doesn't consume $role\n"
+    ) if !defined $module;
 
     return $module->new( pipe => $self, @_ );
 }
