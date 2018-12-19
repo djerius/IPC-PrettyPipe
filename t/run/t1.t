@@ -1,6 +1,7 @@
 #!perl
 
 use Test2::V0;
+use Test::Lib;
 
 use Cwd;
 use Test::Trap qw[ :output(systemsafe) ];
@@ -13,7 +14,7 @@ use File::Spec::Functions qw[ catfile ];
 
 use IPC::PrettyPipe::DSL ':all';
 
-use t::run::utils;
+use My::Run;
 
 
 my $testcmd = catfile( getcwd, 't', 'run', 'testprog.pl' );

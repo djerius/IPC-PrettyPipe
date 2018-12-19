@@ -1,9 +1,10 @@
-package t::run::utils;
+package My::Run;
 
 use Test2::V0;
 use Test2::API;
 
 use File::Slurper qw[ read_text ];
+use File::Spec::Functions qw[ rel2abs ];
 
 use Exporter 'import';
 
@@ -69,7 +70,7 @@ sub test_run {
             if ( $have_logfile ) {
                 my $log;
 
-                ok( $log = eval { do $logfile }, 'parse' );
+                ok( $log = eval { do rel2abs $logfile }, 'parse' );
                 is( $log, $expected, 'content' );
 
             }
