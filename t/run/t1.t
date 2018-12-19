@@ -162,10 +162,6 @@ subtest 'single command; fd < ; fd >; pipe stderr/out capture' => sub {
 
     my %fds = setup_prog( 'test1', 3 => 'r', 4 => 'w' );
 
-    # IPC::Run (v 0.92) has a bug which affects sequential fd's see
-    # https://rt.cpan.org/Ticket/Display.html?id=81851.
-    #
-    # ordering of 4> before 3< is necessary to circumvent bug.
     my @r = trap {
 
         my $pipe = ppipe [
@@ -175,8 +171,8 @@ subtest 'single command; fd < ; fd >; pipe stderr/out capture' => sub {
             3,    'r',
             4,    'w',
             1,    2,
+            '3<', $fds{3}{file},
             '4>', $fds{4}{file},
-            '3<', $fds{3}{file}
           ],
           '>',  'stdout',
           '2>', 'stderr';
@@ -234,10 +230,6 @@ subtest 'two commands; fd < ; fd >; pipe stderr/out capture' => sub {
         },
     );
 
-    # IPC::Run (v 0.92) has a bug which affects sequential fd's see
-    # https://rt.cpan.org/Ticket/Display.html?id=81851.
-    #
-    # ordering of 4> before 3< is necessary to circumvent bug.
     my @r = trap {
 
         my $pipe = ppipe [
@@ -247,8 +239,8 @@ subtest 'two commands; fd < ; fd >; pipe stderr/out capture' => sub {
             3,    'r',
             4,    'w',
             1,    2,
+            '3<', $fds{test1}{3}{file},
             '4>', $fds{test1}{4}{file},
-            '3<', $fds{test1}{3}{file}
           ],
           [
             @testcmd,
@@ -257,8 +249,8 @@ subtest 'two commands; fd < ; fd >; pipe stderr/out capture' => sub {
             3,    'r',
             4,    'w',
             0,    1,
+            '3<', $fds{test2}{3}{file},
             '4>', $fds{test2}{4}{file},
-            '3<', $fds{test2}{3}{file}
           ],
           '>',  'stdout',
           '2>', 'stderr';
