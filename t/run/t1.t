@@ -211,8 +211,6 @@ subtest 'two commands; fd < ; fd >; pipe stderr/out capture' => sub {
 
     my $dir = tempd();
 
-    my $name = 'test1';
-
     my %fds = (
         test1 => {
             setup_prog(
