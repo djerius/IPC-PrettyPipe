@@ -13,7 +13,7 @@ use Type::Params qw[ validate ];
 use Moo;
 
 
-our $VERSION = '0.11';
+our $VERSION = '0.12';
 
 BEGIN {
     if ( $^O =~ /Win32/i ) {

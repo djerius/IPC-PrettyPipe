@@ -12,7 +12,7 @@ use IPC::Run ();
 use Carp     ();
 
 use Moo;
-our $VERSION = '0.11';
+our $VERSION = '0.12';
 
 use namespace::clean;
 
