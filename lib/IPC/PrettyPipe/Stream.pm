@@ -16,7 +16,7 @@ use Fcntl qw[ O_RDONLY O_WRONLY O_CREAT O_TRUNC O_APPEND ];
 
 use Moo;
 
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 
 
 with 'IPC::PrettyPipe::Queue::Element';
