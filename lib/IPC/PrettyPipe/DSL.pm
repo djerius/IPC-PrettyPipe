@@ -332,8 +332,8 @@ C<@args> is used.
 =back
 
 Note that C<ppipe> will use up all arguments passed to it. When
-specfiying nested pipes, make sure that the inner pipes don't grab
-argumemnts meant for the outer ones. For example,
+specifying nested pipes, make sure that the inner pipes don't grab
+arguments meant for the outer ones. For example,
 
   ppipe [ 'cmd1' ], ppipe [ 'cmd2' ], '>', 'file';
 
