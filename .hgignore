@@ -1,6 +1,9 @@
 (^|/)CVS($|/)
 (^|/)\.hg($|/)
 (^|/)\.hgtags($|/)
+.*\.orig
+\.build*
+\.tidyall.d*
 ^project.log$
 ^project.state$
 ^project.state.old$
