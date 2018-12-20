@@ -4,7 +4,7 @@ package IPC::PrettyPipe::Queue;
 
 use Moo;
 
-our $VERSION = '0.10';
+our $VERSION = '0.11';
 
 use namespace::clean;
 

@@ -9,7 +9,7 @@ use Module::Load;
 
 
 use Moo::Role;
-our $VERSION = '0.10';
+our $VERSION = '0.11';
 
 with 'MooX::Attributes::Shadow::Role';
 
