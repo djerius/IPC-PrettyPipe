@@ -13,6 +13,7 @@ use Type::Library
   Arg
   AutoArrayRef
   Cmd
+  Pipe
 ];
 
 use Type::Utils -all;
@@ -24,6 +25,7 @@ declare AutoArrayRef, as ArrayRef;
 coerce AutoArrayRef,
   from Any, via { [$_] };
 
+class_type Pipe, { class => 'IPC::PrettyPipe' };
 class_type Cmd, { class => 'IPC::PrettyPipe::Cmd' };
 class_type Arg, { class => 'IPC::PrettyPipe::Arg' };
 

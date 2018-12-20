@@ -6,9 +6,11 @@ use Carp;
 use Template::Tiny;
 use Safe::Isa;
 
-use Moo;
+use Text::Tabs qw[ expand ];
 use Types::Standard -all;
 use Type::Params qw[ validate ];
+
+use Moo;
 
 
 our $VERSION = '0.09';
@@ -95,51 +97,72 @@ has colors => (
     },
 );
 
-=attr template
+=attr cmd_template
 
-A L<Template::Tiny> template to generate the output.  See L</Rendering
-Template>.
-
-=cut
-
-=method template
-
-  $template = $renderer->template;
-  $renderer->template( $template );
-
-Retrieve or set the L<Template::Tiny> template used to generate the
-output.  See L</Rendering Template>.
+A L<Template::Tiny> template to generate output for commands.  See L</Rendering
+Templates>.
 
 =cut
 
+=method cmd_template
 
-has template => (
+  $cmd_template = $renderer->cmd_template;
+  $renderer->cmd_template( $cmd_template );
+
+Retrieve or set the L<Template::Tiny> template used to generate output
+for commands.  See L</Rendering Templates>.
+
+=cut
+
+
+has cmd_template => (
+    is      => 'rw',
+    default => <<"EOT",
+[%- indent %][% color.cmd.cmd %][% cmd.quoted_cmd %][% color.reset %]
+[%- FOREACH arg IN cmd.args.elements %]\\
+[% indent %][% indent %][% color.cmd.arg.pfx %][% arg.pfx %][% color.cmd.arg.name %][% arg.quoted_name %]
+[%- IF arg.has_value %][%- IF arg.sep %][% color.cmd.arg.sep %][% arg.sep %][% ELSE %] [% END %]
+[%- color.cmd.arg.value %][% arg.quoted_value %][% END %][% color.reset %]
+[%- END %]
+[%- FOREACH stream IN cmd.streams.elements %]\\
+[% indent %][% indent %][% color.cmd.stream.spec %][% stream.spec -%]
+[% IF stream.has_file %] [% color.cmd.stream.file %][% stream.quoted_file %][% color.reset %][% END %]
+[%- END -%]
+EOT
+);
+
+=attr pipe_template
+
+A L<Template::Tiny> template to generate output for pipes.  See L</Rendering
+Templates>.
+
+=cut
+
+=method pipe_template
+
+  $pipe_template = $renderer->pipe_template;
+  $renderer->pipe_template( $pipe_template );
+
+Retrieve or set the L<Template::Tiny> template used to generate output
+for pipes.  See L</Rendering Templates>.
+
+=cut
+
+has pipe_template => (
 
     is => 'rw',
 
     default => <<"EOT",
-[% IF pipe.streams.empty %][% ELSE %](\t\\
-[% END -%]
-[%- FOREACH cmd IN pipe.cmds.elements %]
-[%- IF cmd.first %]  [% ELSE %]\t\\
-| [% END %][% color.cmd.cmd %][% cmd.quoted_cmd %][% color.reset %]
-[%- FOREACH arg IN cmd.args.elements %]\t\\
-    [% color.cmd.arg.pfx %][% arg.pfx %]
-[%- color.cmd.arg.name %][% arg.quoted_name %]
-[%- IF arg.has_value %][%- IF arg.sep %][% color.cmd.arg.sep %][% arg.sep %][% ELSE %] [% END %]
-[%- color.cmd.arg.value %][% arg.quoted_value %][% END %][% color.reset %]
-[%- END %]
-[%- FOREACH stream IN cmd.streams.elements %]\t\\
-[% color.cmd.stream.spec %][% stream.spec %]
-[%- IF stream.has_file %] [% END %][% color.cmd.stream.file %][% stream.quoted_file %][% color.reset %]
-[%- END %]
-[%- END %]
-[%- IF pipe.streams.empty %][% ELSE %]\t\\
-)[% FOREACH stream IN pipe.streams.elements %]\t\\
+[% indent %][% IF pipe.streams.empty %][% ELSE %](\\
+[% END %][% cmds %]
+[%- IF pipe.streams.empty %][% ELSE %]\\
+[% indent %])[% FOREACH stream IN pipe.streams.elements -%]
+[% IF stream.first %]\t[% ELSE %]\\
+\t[% indent %][% END -%]
 [% color.pipe.stream.spec %][% stream.spec -%]
-[%- IF stream.has_file %] [% END %][% color.pipe.stream.file %][% stream.quoted_file %][% color.reset %]
-[%- END %]
-[%- END %]
+[% IF stream.has_file %] [% color.pipe.stream.file %][% stream.quoted_file %][% color.reset %][% END %]
+[%- END -%]
+[%- END -%]
 EOT
 );
 
@@ -194,11 +217,7 @@ sub render {
             colorize => Optional [Bool],
         ] );
 
-
-
     $args->{colorize} //= 1;    ## no critic (ProhibitAccessOfPrivateData)
-
-    my $output;
 
     my %color;
     _colorize( $self->colors, \%color );
@@ -206,19 +225,63 @@ sub render {
     $color{reset} = Term::ANSIColor::color( 'reset' )
       if keys %color;
 
+    local $Text::Tabs::tabstop = 2;
 
-    Template::Tiny->new->process(
-        \$self->template,
-        {
-            ## no critic (ProhibitAccessOfPrivateData)
-            pipe => $self->pipe,
-            $args->{colorize} ? ( color => \%color ) : (),
-        },
-        \$output,
-    );
+    # generate non-colorized version so can get length of records to
+    # pad out any continuation lines
+    my @output;
+    $self->_render_pipe( $self->pipe, { indent => '' },  \@output);
 
-    return $output;
+    my @records = map { expand( $_ ) } map { split( /\n/, $_ ) } @output;
+    my @lengths = map { length } @records;
+    my $max = List::Util::max( @lengths ) + 4;
+
+    if ( $args->{colorize} ) {
+        @output = ();
+        $self->_render_pipe( $self->pipe, { indent => '', color => \%color },  \@output);
+        @records = map { expand( $_ ) } map { split( /\n/, $_ ) } @output;
+    }
+
+    for my $record ( @records ) {
+        my $pad =  ' ' x ($max - shift @lengths);
+        $record =~ s/\\$/$pad \\/;
+    }
+
+    return join ("\n", @records ) . "\n";
 }
+
+sub _render_pipe {
+
+    my $self = shift;
+
+    my ( $pipe, $process_args, $output ) = @_;
+
+    my %process_args = %{$process_args};
+
+    my @output;
+
+    for my $cmd ( @{ $pipe->cmds->elements } ) {
+        if ( $cmd->isa( 'IPC::PrettyPipe' ) ) {
+            local $process_args{indent} = $process_args{indent} . "\t";
+            $self->_render_pipe( $cmd, \%process_args, \@output );
+        }
+        else {
+            local $process_args{indent} = $process_args{indent} . "\t";
+            push @output, '';
+            local $process_args{cmd} = $cmd;
+            Template::Tiny->new->process( \$self->cmd_template, \%process_args,
+                \( $output[-1] ) );
+        }
+    }
+
+    $process_args{cmds} = join( "\\\n|", @output );
+    $process_args{pipe} = $pipe;
+    push @{$output}, '';
+    Template::Tiny->new->process( \$self->pipe_template, \%process_args,
+        \( $output->[-1] ) );
+    return;
+}
+
 
 with 'IPC::PrettyPipe::Renderer';
 
@@ -251,20 +314,16 @@ L<IPC::PrettyPipe> using the L<Template::Tiny> module.
 
 =head1 CONFIGURATION
 
-=head2 Rendering Template
+=head2 Rendering Templates
 
-The C<template> attribute and method may be used to change the
-template used to render the pipeline.  The template is passed the
-following parameters:
+Because pipes may be nested and L<Template::Tiny> cannot handle
+recursive logic, there are two templates, C<cmd_template> for commands
+and C<pipe_template> for pipes.
 
-=over
-
-=item C<pipe>
-
-C<pipe> is the L<IPC::PrettyPipe> object. L<Template::Tiny> doesn't
-support loop constructs, so the L<IPC::PrettyPipe> L<streams|IPC::PrettyPipe/streams> and
-L<cmds|IPC::PrettyPipe/cmds> methods return L<IPC::PrettyPipe::Queue> objects, which
-provide methods for determining if the lists are empty.
+L<Template::Tiny> also doesn't support loop constructs, so the
+L<IPC::PrettyPipe> L<streams|IPC::PrettyPipe/streams> and
+L<cmds|IPC::PrettyPipe/cmds> methods return L<IPC::PrettyPipe::Queue>
+objects, which provide methods for determining if the lists are empty.
 
 
   [% IF pipe.streams.empty %][% ELSE %](\t\\
@@ -284,6 +343,33 @@ indicates whether it is the first or last in its queue.
   [%- IF cmd.first %]  [% ELSE %]\t\\
   | [% END %]
 
+The templates are passed the following parameters:
+
+=over
+
+=item C<indent>
+
+Indentation is performed via tab stops.  C<indent> is augmented with
+additional tab characters (C<\t>) for nested pipes.
+
+=item C<pipe>
+
+This is passed only to the C<pipe_template>.
+
+C<pipe> is the L<IPC::PrettyPipe> object.
+
+=item C<cmd>
+
+This is passed only to the C<cmd_template>
+
+C<cmd> is the L<IPC::PrettyPipe::Cmd> object.
+
+
+=item C<cmds>
+
+This is passed only to the C<pipe_template>.
+It contains the rendered commands in the pipe.
+
 =item C<color>
 
 This is the hashref specified by the C<colors> attribute or method.
@@ -296,9 +382,9 @@ and colorize a command:
 
 =back
 
-The default template (encoded into the source file for
-B<IPC::PrettyPipe::Render::Template::Tiny>) provides a good example
-of how to construct one.
+Use the default templates (encoded into the source file for
+B<IPC::PrettyPipe::Render::Template::Tiny>) as a basis for
+exploration.
 
 =head2 Rendered Colors
 

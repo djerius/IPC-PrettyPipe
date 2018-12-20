@@ -27,6 +27,8 @@ use IPC::PrettyPipe::Arg::Format;
 use Moo;
 use Moo::Role ();
 
+with 'IPC::PrettyPipe::Queue::Element';
+
 use namespace::clean;
 
 BEGIN {
@@ -270,17 +272,32 @@ sub BUILD {
 
 =method add
 
-  $cmd_obj = $pipe->add( $cmd );
   $cmd_obj = $pipe->add( cmd => $cmd, %options );
 
 Create an L<IPC::PrettyPipe::Cmd> object, add it to the
-B<IPC::PrettyPipe> object, and return a handle to it.  If passed
-a single parameter, it is assumed to be a C<cmd> parameter.
+B<IPC::PrettyPipe> object, and return a handle to it.  C<%options> are
+the same as for the L<IPC::PrettyPipe::Cmd> constructor.
 
-This is a thin wrapper around the L<IPC::PrettyPipe::Cmd> constructor,
-taking the same parameters.  The only difference is that if the value
-of the C<cmd> parameter is an L<IPC::PrettyPipe::Cmd> object it
-is inserted into the pipeline.
+C<add> may also be passed a single parameter, which may be one of:
+
+=over
+
+=item  $cmd_obj = $pipe->add( $cmd_name );
+
+The name of a command
+
+=item $cmd_obj = $pipe->add( $cmd_obj );
+
+An existing C<IPC::PrettyPipe::Cmd> object
+
+=item $pipe_obj = $pipe->add( $pipe_obj );
+
+An existing C<IPC::PrettyPipe> object.  This is intended to allow
+pipes to be nested.  However, nested pipes with non-default
+streams may not be supported by the pipe executor.
+
+=back
+
 
 =cut
 
@@ -300,7 +317,7 @@ sub add {
     my ( $attr ) = validate(
         \@_,
         slurpy Dict [
-            cmd    => Str | Cmd,
+            cmd    => Str | Cmd | Pipe,
             args   => Optional,
             argfmt => Optional [ InstanceOf ['IPC::PrettyPipe::Arg::Format'] ],
             ( map { $_ => Optional [Str] } keys %{$argfmt_attrs} ),
@@ -319,6 +336,15 @@ sub add {
 
         croak(
             "cannot specify additional arguments when passing a Cmd object\n" )
+          if keys %$attr;
+    }
+
+    elsif ( $attr->{cmd}->$_isa( 'IPC::PrettyPipe' ) ) {
+
+        $cmd = delete $attr->{cmd};
+
+        croak(
+            "cannot specify additional arguments when passing a Pipe object\n" )
           if keys %$attr;
     }
 
@@ -400,13 +426,29 @@ sub ffadd {
 
         }
 
+        elsif ( $t->$_isa( 'IPC::PrettyPipe' ) ) {
+
+            $self->add( $t );
+
+        }
+
         elsif ( 'ARRAY' eq ref $t ) {
 
-            my $cmd = IPC::PrettyPipe::Cmd->new(
-                cmd    => shift( @$t ),
-                argfmt => $argfmt->clone
-            );
-            $cmd->ffadd( @$t );
+            my $cmd;
+
+            if ( ( $cmd = $t->[0])->$_isa( 'IPC::PrettyPipe' ) ) {
+                croak( "In an array containing an IPC::PrettyPipe object, it must be the only element\n" )
+                  if @$t > 1;
+            }
+
+            else {
+
+                $cmd = IPC::PrettyPipe::Cmd->new(
+                                                    cmd    => shift( @$t ),
+                                                    argfmt => $argfmt->clone
+                                                   );
+                $cmd->ffadd( @$t );
+            }
 
             $self->add( $cmd );
         }
@@ -657,7 +699,6 @@ sub _backend_factory {
 
     for my $try ( $req, compose_module_name( "IPC::PrettyPipe::$type", $req ) )
     {
-
         next unless use_package_optimistically( $try )->DOES( $role );
 
         $module = $try;

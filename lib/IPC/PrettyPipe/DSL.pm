@@ -286,7 +286,13 @@ an B<L<IPC::PrettyPipe::Cmd>> object
 
 =item *
 
-An arrayref. The first element is the command name; the rest are
+a B<L<IPC::PrettyPipe::Pipe>> object
+
+=item *
+
+An arrayref. The array may contain either a single
+B<L<IPC::PrettyPipe::Pipe>> object or a number of elements, the first
+of which being the command name with the rest being
 
 =over
 
@@ -324,6 +330,18 @@ C<@args> is used.
 =back
 
 =back
+
+Note that C<ppipe> will use up all arguments passed to it. When
+specfiying nested pipes, make sure that the inner pipes don't grab
+argumemnts meant for the outer ones. For example,
+
+  ppipe [ 'cmd1' ], ppipe [ 'cmd2' ], '>', 'file';
+
+redirects the output of the second, inner pipe, not the outer one.
+Either of these will do that:
+
+  ppipe [ 'cmd1' ], [ ppipe [ 'cmd2' ] ], '>', 'file';
+  ppipe [ 'cmd1' ], ppipe( [ 'cmd2' ]), '>', 'file';
 
 =cut
 

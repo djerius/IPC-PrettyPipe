@@ -52,19 +52,32 @@ has _harness => (
 
         my @harness;
 
-        for my $cmd ( @{ $self->pipe->cmds->elements } ) {
+        my @cmds = @{ $self->pipe->cmds->elements };
 
-            push @harness, '|' if @harness;
+        while ( @cmds ) {
 
-            push @harness,
-              [
-                $cmd->cmd,
-                map { $_->render( flatten => 1 ) } @{ $cmd->args->elements },
-              ];
+            my $cmd = shift @cmds;
 
-            push @harness,
-              map { $_->spec, $_->has_file ? $_->file : () }
-              @{ $cmd->streams->elements };
+            if ( $cmd->isa( 'IPC::PrettyPipe::Cmd' ) ) {
+
+                push @harness, '|' if @harness;
+
+                push @harness,
+                  [
+                   $cmd->cmd,
+                   map { $_->render( flatten => 1 ) } @{ $cmd->args->elements },
+                  ];
+
+                push @harness,
+                  map { $_->spec, $_->has_file ? $_->file : () }
+                  @{ $cmd->streams->elements };
+            }
+            elsif ( $cmd->isa( 'IPC::PrettyPipe' ) ) {
+
+                croak( "cannot chain sub-pipes which have streams" )
+                  unless $cmd->streams->empty;
+                unshift @cmds, @{ $cmd->cmds->elements };
+            }
         }
 
         return IPC::Run::harness( @harness );
@@ -138,9 +151,28 @@ B<IPC::PrettyPipe::Execute::IPC::Run> implements the
 B<L<IPC::PrettyPipe::Executor>> role, providing an execution backend for
 B<L<IPC::PrettyPipe>> using the B<L<IPC::Run>> module.
 
-It also provides proxied access to the B<L<IPC::Run>> B<L<start|IPC::Run/start>>, B<L<pump|IPC::Run/pump>>, and
-B<L<finish|IPC::Run/finish>> methods.  (It does not provide direct access to the
-B<L<IPC::Run>> harness object).
+It does not support inner pipes with non-default streams.  For
+example, this is supported:
+
+  ppipe [ 'cmd1' ],
+        [ ppipe ['cmd2.1'],
+                ['cmd2.2'],
+        ],
+        '>', $file;
+
+while this is not:
+
+  ppipe [ 'cmd1' ],
+        [ ppipe ['cmd2.1'],
+                ['cmd2.2'],
+               '>', $file
+        ];
+
+
+It also provides proxied access to the B<L<IPC::Run>>
+B<L<start|IPC::Run/start>>, B<L<pump|IPC::Run/pump>>, and
+B<L<finish|IPC::Run/finish>> methods.  (It does not provide direct
+access to the B<L<IPC::Run>> harness object).
 
 When using the proxied methods, the caller must ensure that the
 B<L</finish>> method is invoked to ensure that the parent processes'
