@@ -2,6 +2,17 @@ Revision history for {{$dist->name}}
 
 {{$NEXT}}
 
+0.09      2018-12-19 12:43:10-05:00 America/New_York (TRIAL RELEASE)
+
+
+   [ENHANCEMANT & API BREAKAGE]
+
+      * pipes may now be nested. Not all nested pipes may be
+        executed, though; see the docs.
+      * IPC::PrettyPipe::Render::Template::Tiny now requires two
+        templates to handle nested pipes.  This breaks its API
+
+
 0.08      2018-11-16 14:27:40-05:00 America/New_York
 
 
