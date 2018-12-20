@@ -2,6 +2,13 @@ Revision history for {{$dist->name}}
 
 {{$NEXT}}
 
+0.11      2018-12-20 17:10:44-05:00 America/New_York (TRIAL RELEASE)
+
+  [BUILD FIX]
+
+     * previous release had an incomplete Makefile.PL, causing
+       failures on Windows
+
 0.10      2018-12-19 12:43:10-05:00 America/New_York (TRIAL RELEASE)
 
 
