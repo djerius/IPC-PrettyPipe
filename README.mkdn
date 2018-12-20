@@ -10,7 +10,7 @@ version 0.09
 
     use IPC::PrettyPipe;
 
-    my $pipe = new IPC::PrettyPipe;
+    my $pipe = IPC::PrettyPipe->new;
 
     $pipe->add( $command, %options );
     $pipe->add( cmd => $command, %options );
@@ -36,7 +36,7 @@ treating commands, their options, and the options' values as separate
 entities so that it can produce nicely formatted output.
 
 It is designed to be used in conjunction with other modules which
-actually execute pipelines, such as [IPC::Run](https://metacpan.org/pod/IPC::Run)
+actually execute pipelines, such as [IPC::Run](https://metacpan.org/pod/IPC::Run).
 
 This module (and its siblings [IPC::PrettyPipe::Cmd](https://metacpan.org/pod/IPC::PrettyPipe::Cmd),
 [IPC::PrettyPipe::Arg](https://metacpan.org/pod/IPC::PrettyPipe::Arg), and [IPC::PrettyPipe::Stream](https://metacpan.org/pod/IPC::PrettyPipe::Stream)) present
@@ -119,53 +119,61 @@ be either a class name or an object reference, and must consume the
 
 # METHODS
 
-- new
+## new
 
-        # initialize the pipe with commands
-        $pipe = IPC::PrettyPipe->new(
-          cmds => [ $cmd1, $cmd2 ], %attrs
-        );
+    # initialize the pipe with commands
+    $pipe = IPC::PrettyPipe->new(
+      cmds => [ $cmd1, $cmd2 ], %attrs
+    );
 
-        # initialize the pipe with a single command
-        $pipe = IPC::PrettyPipe->new( $cmd );
+    # initialize the pipe with a single command
+    $pipe = IPC::PrettyPipe->new( $cmd );
 
-        # create an empty pipeline, setting defaults
-        $pipe = IPC::PrettyPipe->new( %attrs );
+    # create an empty pipeline, setting defaults
+    $pipe = IPC::PrettyPipe->new( %attrs );
 
-    Create a new `IPC::PrettyPipe` object. The available attributes are:
+## **cmds**
 
-- **cmds**
+    $cmds = $pipe->cmds;
 
-        $cmds = $pipe->cmds;
+Return a [IPC::PrettyPipe::Queue](https://metacpan.org/pod/IPC::PrettyPipe::Queue) object containing the
+[IPC::PrettyPipe::Cmd](https://metacpan.org/pod/IPC::PrettyPipe::Cmd) objects associated with the pipe.
 
-    Return a [IPC::PrettyPipe::Queue](https://metacpan.org/pod/IPC::PrettyPipe::Queue) object containing the
-    [IPC::PrettyPipe::Cmd](https://metacpan.org/pod/IPC::PrettyPipe::Cmd) objects associated with the pipe.
+## run
 
-- **render**
+    $pipe->run
 
-        my $string = $pipe->render
+Execute the pipeline.
 
-    Return a prettified string of the pipeline.
+## render
 
-- **run**
+    my $string = $pipe->render
 
-        $pipe->run
-
-    Execute the pipeline.
+Return a prettified string of the pipeline.
 
 ## add
 
-    $cmd_obj = $pipe->add( $cmd );
     $cmd_obj = $pipe->add( cmd => $cmd, %options );
 
 Create an [IPC::PrettyPipe::Cmd](https://metacpan.org/pod/IPC::PrettyPipe::Cmd) object, add it to the
-**IPC::PrettyPipe** object, and return a handle to it.  If passed
-a single parameter, it is assumed to be a `cmd` parameter.
+**IPC::PrettyPipe** object, and return a handle to it.  `%options` are
+the same as for the [IPC::PrettyPipe::Cmd](https://metacpan.org/pod/IPC::PrettyPipe::Cmd) constructor.
 
-This is a thin wrapper around the [IPC::PrettyPipe::Cmd](https://metacpan.org/pod/IPC::PrettyPipe::Cmd) constructor,
-taking the same parameters.  The only difference is that if the value
-of the `cmd` parameter is an [IPC::PrettyPipe::Cmd](https://metacpan.org/pod/IPC::PrettyPipe::Cmd) object it
-is inserted into the pipeline.
+`add` may also be passed a single parameter, which may be one of:
+
+- $cmd\_obj = $pipe->add( $cmd\_name );
+
+    The name of a command
+
+- $cmd\_obj = $pipe->add( $cmd\_obj );
+
+    An existing `IPC::PrettyPipe::Cmd` object
+
+- $pipe\_obj = $pipe->add( $pipe\_obj );
+
+    An existing `IPC::PrettyPipe` object.  This is intended to allow
+    pipes to be nested.  However, nested pipes with non-default
+    streams may not be supported by the pipe executor.
 
 ## ffadd
 
