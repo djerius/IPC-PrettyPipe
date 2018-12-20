@@ -33,6 +33,20 @@ BEGIN {
     IPC::PrettyPipe::Arg::Format->shadow_attrs( fmt => sub { 'arg' . shift } );
 }
 
+=method new
+
+  # initialize the pipe with commands
+  $pipe = IPC::PrettyPipe->new(
+    cmds => [ $cmd1, $cmd2 ], %attrs
+  );
+
+  # initialize the pipe with a single command
+  $pipe = IPC::PrettyPipe->new( $cmd );
+
+  # create an empty pipeline, setting defaults
+  $pipe = IPC::PrettyPipe->new( %attrs );
+
+=cut
 
 =attr argfmt
 
@@ -59,7 +73,6 @@ arguments to commands.  See L<IPC::PrettyPipe::Arg> for more
 details.  These override any specified via the L</argfmt> object.
 
 =cut
-
 
 =attr streams
 
@@ -94,6 +107,15 @@ has _init_cmds => (
 I<Optional>. The value should be an arrayref of commands to load into
 the pipe.  The contents of the array are passed to the L</ffadd>
 method for processing.
+
+=cut
+
+=method B<cmds>
+
+  $cmds = $pipe->cmds;
+
+Return a L<IPC::PrettyPipe::Queue> object containing the
+L<IPC::PrettyPipe::Cmd> objects associated with the pipe.
 
 =cut
 
@@ -139,7 +161,6 @@ L<IPC::PrettyPipe::Execute::IPC::Run>.
 
 =cut
 
-
 sub executor {
     my $self = shift;
 
@@ -148,6 +169,15 @@ sub executor {
 
     return $self->_executor;
 }
+
+=method run
+
+   $pipe->run
+
+Execute the pipeline.
+
+=cut
+
 
 has _renderer_arg => (
     is       => 'rw',
@@ -190,6 +220,14 @@ sub renderer {
 
     return $self->_renderer;
 }
+
+=method render
+
+  my $string = $pipe->render
+
+Return a prettified string of the pipeline.
+
+=cut
 
 
 =for Pod::Coverage BUILDARGS BUILD
@@ -674,7 +712,7 @@ valsubst
 
   use IPC::PrettyPipe;
 
-  my $pipe = new IPC::PrettyPipe;
+  my $pipe = IPC::PrettyPipe->new;
 
   $pipe->add( $command, %options );
   $pipe->add( cmd => $command, %options );
@@ -700,7 +738,7 @@ treating commands, their options, and the options' values as separate
 entities so that it can produce nicely formatted output.
 
 It is designed to be used in conjunction with other modules which
-actually execute pipelines, such as L<IPC::Run>
+actually execute pipelines, such as L<IPC::Run>.
 
 This module (and its siblings L<IPC::PrettyPipe::Cmd>,
 L<IPC::PrettyPipe::Arg>, and L<IPC::PrettyPipe::Stream>) present
@@ -737,44 +775,3 @@ Sometimes it's not possible to fill in an argument's value until after
 a pipeline has been created.  The L</valsubst> method allows
 altering them after the fact.
 
-
-=head1 METHODS
-
-=over
-
-=item new
-
-  # initialize the pipe with commands
-  $pipe = IPC::PrettyPipe->new(
-    cmds => [ $cmd1, $cmd2 ], %attrs
-  );
-
-  # initialize the pipe with a single command
-  $pipe = IPC::PrettyPipe->new( $cmd );
-
-  # create an empty pipeline, setting defaults
-  $pipe = IPC::PrettyPipe->new( %attrs );
-
-Create a new C<IPC::PrettyPipe> object. The available attributes are:
-
-=item B<cmds>
-
-  $cmds = $pipe->cmds;
-
-Return a L<IPC::PrettyPipe::Queue> object containing the
-L<IPC::PrettyPipe::Cmd> objects associated with the pipe.
-
-=item B<render>
-
-  my $string = $pipe->render
-
-Return a prettified string of the pipeline.
-
-
-=item B<run>
-
-   $pipe->run
-
-Execute the pipeline.
-
-=back

@@ -23,11 +23,50 @@ use Term::ANSIColor ();
 use namespace::clean;
 
 
+=method new
+
+  $renderer = IPC::PrettyPipe::Render::Template::Tiny->new( %attr );
+
+Construct a new renderer.  Typically this is done automatically by L<IPC::PrettyPipe>.
+
+=cut
+
+=attr pipe
+
+The L<IPC::PrettyPipe> object to render.
+
+=cut
+
+=attr pipe
+
+  $pipe = $renderer->pipe;
+  $renderer->pipe( $pipe );
+
+Retrieve or set the L<IPC::PrettyPipe> object to render.
+
+=cut
+
+
 has pipe => (
     is       => 'rw',
     isa      => InstanceOf ['IPC::PrettyPipe'],
     required => 1,
 );
+
+=attr colors
+
+A color specification; see L</Rendered Colors>.
+
+=cut
+
+=method colors
+
+  $colors = $renderer->colors;
+  $renderer->colors( $colors );
+
+Retrieve or set the colors to be output; see L</Rendered Colors>.
+
+=cut
 
 has colors => (
     is      => 'rw',
@@ -55,6 +94,23 @@ has colors => (
         };
     },
 );
+
+=attr template
+
+A L<Template::Tiny> template to generate the output.  See L</Rendering
+Template>.
+
+=cut
+
+=method template
+
+  $template = $renderer->template;
+  $renderer->template( $template );
+
+Retrieve or set the L<Template::Tiny> template used to generate the
+output.  See L</Rendering Template>.
+
+=cut
 
 
 has template => (
@@ -109,6 +165,24 @@ sub _colorize {
     }
 
 }
+
+=method render
+
+  $renderer->render( %options );
+
+The following options are available:
+
+=over
+
+=item *
+
+colorize
+
+If true (the default) the output is colorized using L<Term::AnsiColor>.
+
+=back
+
+=cut
 
 sub render {
 
@@ -172,77 +246,8 @@ renderer
 =head1 DESCRIPTION
 
 B<IPC::PrettyPipe::Render::Template::Tiny> implements the
-B<L<IPC::PrettyPipe::Renderer>> role, providing a rendering backend for
-B<L<IPC::PrettyPipe>> using the B<L<Template::Tiny>> module.
-
-=head1 METHODS
-
-=over
-
-=item new
-
-  $renderer = IPC::PrettyPipe::Render::Template::Tiny->new( %attr );
-
-Construct a new renderer.  Typically this is done automatically by B<L<IPC::PrettyPipe>>.
-The following attributes are available:
-
-=over
-
-=item pipe
-
-The B<L<IPC::PrettyPipe>> object to render.
-
-=item colors
-
-A color specification; see L</Rendered Colors>.
-
-=item template
-
-A B<L<Template::Tiny>> template to generate the output.  See L</Rendering
-Template>.
-
-=back
-
-
-=item render
-
-  $renderer->render( %options );
-
-The following options are available:
-
-=over
-
-=item *
-
-colorize
-
-If true (the default) the output is colorized using B<L<Term::AnsiColor>>.
-
-=back
-
-=item pipe
-
-  $pipe = $renderer->pipe;
-  $renderer->pipe( $pipe );
-
-Retrieve or set the B<L<IPC::PrettyPipe>> object to render.
-
-=item colors
-
-  $colors = $renderer->colors;
-  $renderer->colors( $colors );
-
-Retrieve or set the colors to be output; see L</Rendered Colors>.
-
-=item template
-
-  $template = $renderer->template;
-  $renderer->template( $template );
-
-Retrieve or set the B<L<Template::Tiny>> template used to generate the
-output.  See L</Rendering Template>.
-
-=back
+L<IPC::PrettyPipe::Renderer> role, providing a rendering backend for
+L<IPC::PrettyPipe> using the L<Template::Tiny> module.
 
 =head1 CONFIGURATION
 
@@ -256,16 +261,16 @@ following parameters:
 
 =item C<pipe>
 
-C<pipe> is the B<L<IPC::PrettyPipe>> object. B<L<Template::Tiny>> doesn't
-support loop constructs, so the B<L<IPC::PrettyPipe>> B<L<streams|IPC::PrettyPipe/streams>> and
-B<L<cmds|IPC::PrettyPipe/cmds>> methods return B<L<IPC::PrettyPipe::Queue>> objects, which
+C<pipe> is the L<IPC::PrettyPipe> object. L<Template::Tiny> doesn't
+support loop constructs, so the L<IPC::PrettyPipe> L<streams|IPC::PrettyPipe/streams> and
+L<cmds|IPC::PrettyPipe/cmds> methods return L<IPC::PrettyPipe::Queue> objects, which
 provide methods for determining if the lists are empty.
 
 
   [% IF pipe.streams.empty %][% ELSE %](\t\\
   [% END -%]
 
-Note that B<L<Template::Tiny>> resolves object methods with the same syntax as it
+Note that L<Template::Tiny> resolves object methods with the same syntax as it
 resolves hash entries.
 
 Iteration looks like this:
@@ -273,7 +278,7 @@ Iteration looks like this:
   [%- FOREACH cmd IN pipe.cmds.elements %]
   [% END %]
 
-An B<L<IPC::PrettyPipe::Queue::Element>> has additional methods which
+An L<IPC::PrettyPipe::Queue::Element> has additional methods which
 indicates whether it is the first or last in its queue.
 
   [%- IF cmd.first %]  [% ELSE %]\t\\
