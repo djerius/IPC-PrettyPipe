@@ -242,9 +242,9 @@ sub render {
         @records = map { expand( $_ ) } map { split( /\n/, $_ ) } @output;
     }
 
-    for my $record ( @records ) {
+    foreach ( @records ) {
         my $pad =  ' ' x ($max - shift @lengths);
-        $record =~ s/\\$/$pad \\/;
+        s/\\$/$pad \\/;
     }
 
     return join ("\n", @records ) . "\n";
