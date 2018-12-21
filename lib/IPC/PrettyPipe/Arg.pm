@@ -11,7 +11,7 @@ use IPC::PrettyPipe::Arg::Format;
 
 use Moo;
 
-our $VERSION = '0.12';
+our $VERSION = '0.13';
 
 has name => (
     is       => 'ro',

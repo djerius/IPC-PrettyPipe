@@ -6,7 +6,7 @@ use Moo::Role;
 
 use namespace::clean;
 
-our $VERSION = '0.12';
+our $VERSION = '0.13';
 
 has last => (
     is       => 'rwp',

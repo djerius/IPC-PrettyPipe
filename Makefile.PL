@@ -56,7 +56,7 @@ my %WriteMakefileArgs = (
     "Test::Trap" => 0,
     "Types::Standard" => 0
   },
-  "VERSION" => "0.12",
+  "VERSION" => "0.13",
   "test" => {
     "TESTS" => "t/*.t t/arg/*.t t/cmd/*.t t/dsl/*.t t/ppipe/*.t t/render/*.t t/run/*.t t/stream/*.t"
   }
