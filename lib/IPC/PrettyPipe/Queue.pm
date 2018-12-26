@@ -7,26 +7,98 @@ use Moo;
 our $VERSION = '0.13';
 
 use Safe::Isa;
+use Types::Standard -types;
 
 use namespace::clean;
 
 
+=method new
+
+  $q = IPC::PrettyPipe::Queue->new( %attributes );
+
+Construct a new queue.  See L</ATTRIBUTES> for the available attributes. 
+
+=cut
+
+=for Pod::Coverage BUILD
+
+=cut
+
+sub BUILD {
+
+    my $self = shift;
+
+    if ( @{ $self->elements } ) {
+
+        for ( @{ $self->elements } ) {
+            $_->_set_first( 0 );
+            $_->_set_last( 0 );
+        }
+
+        $self->elements->[0]->_set_first( 1 );
+        $self->elements->[-1]->_set_last( 1 );
+    }
+}
+
+
+
+=method elements
+
+  $elements = $q->elements;
+
+Returns an arrayref containing the queue's elements.
+
+=cut
+
+=attr elements
+
+The initial set of queue elements.  This should be an arrayref of objects
+which consume the L<IPC::PrettyPipe::Queue::Element> role.x
+
+=cut
+
 has elements => (
-    is       => 'ro',
-    init_arg => undef,
-    default  => sub { [] },
+    is      => 'ro',
+    isa     => ArrayRef [ ConsumerOf ['IPC::PrettyPipe::Queue::Element'] ],
+    default => sub { [] },
 );
+
+=method empty
+
+  $is_q_empty = $q->empty;
+
+Returns true if there are no elements in the queue.
+
+=cut
 
 sub empty { !!!@{ $_[0]->elements } }
 
+=method nelements
+
+  $nelements = $q->nelements;
+
+Returns the number of elements in the queue.
+
 sub nelements { scalar @{ $_[0]->elements } }
+
+=cut
+
+=method push
+
+  $q->push( $element );
+
+Push the element on the end of the queue.  The element must perform
+the B<L<IPC::PrettyPipe::Queue::Element>> role.
+
+=cut
 
 sub push {
 
     my ( $self, $elem ) = ( shift, shift );
 
-    die( "attempt to push an incompatible element onto an IPC::PrettyPipe::Queue\n" )
-      unless $elem->$_does( 'IPC::PrettyPipe::Queue::Element' );
+    die(
+        "attempt to push an incompatible element onto an IPC::PrettyPipe::Queue\n"
+    ) unless $elem->$_does( 'IPC::PrettyPipe::Queue::Element' );
 
     my $elements = $self->elements;
 
@@ -59,7 +131,7 @@ nelements
 
 =head1 SYNOPSIS
 
-  $q = IPC::PrettyPipe::Queue->new;
+  $q = IPC::PrettyPipe::Queue->new( elements => [...] );
 
   $q->push( $elem );
 
@@ -79,37 +151,6 @@ The following methods are available:
 
 
 =over
-
-=item new
-
-  $q = IPC::PrettyPipe::Queue->new;
-
-Construct an empty queue.
-
-=item push
-
-  $q->push( $element );
-
-Push the element on the end of the queue.  The element must perform
-the B<L<IPC::PrettyPipe::Queue::Element>> role.
-
-=item empty
-
-  $is_q_empty = $q->empty;
-
-Returns true if there are no elements in the queue.
-
-=item elements
-
-  $elements = $q->elements;
-
-Returns an arrayref containing the queue's elements.
-
-=item nelements
-
-  $nelements = $q->nelements;
-
-Returns the number of elements in the queue.
 
 =back
 
