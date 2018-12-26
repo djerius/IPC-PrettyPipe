@@ -126,23 +126,37 @@ details.  These override any specified via the L</argfmt> object.
 
 =cut
 
-=attr streams
+=method streams
 
   $streams = $pipe->streams;
 
 A L<IPC::PrettyPipe::Queue> object containing the
-L<IPC::PrettyPipe::Stream> objects associated with the pipe. Created
-automatically.
+L<IPC::PrettyPipe::Stream> objects associated with the pipe.
+
+=cut
+
+=attr streams
+
+An arrayref of L<IPC::PrettyPipe::stream> objects.
 
 =cut
 
 
 has streams => (
-    is       => 'ro',
-    default  => sub { IPC::PrettyPipe::Queue->new },
+    is      => 'lazy',
+    default => sub {
+        IPC::PrettyPipe::Queue->new( elements => $_[0]->_init_streams );
+    },
     init_arg => undef,
 );
 
+
+has _init_streams => (
+    is       => 'ro',
+    isa      => ArrayRef [ InstanceOf ['IPC::PrettyPipe::Stream'] ],
+    init_arg => 'streams',
+    default => sub { [] },
+);
 
 has _init_cmds => (
     is        => 'ro',
