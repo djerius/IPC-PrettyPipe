@@ -230,24 +230,25 @@ sub render {
     # generate non-colorized version so can get length of records to
     # pad out any continuation lines
     my @output;
-    $self->_render_pipe( $self->pipe, { indent => '' },  \@output);
+    $self->_render_pipe( $self->pipe, { indent => '' }, \@output );
 
     my @records = map { expand( $_ ) } map { split( /\n/, $_ ) } @output;
     my @lengths = map { length } @records;
-    my $max = List::Util::max( @lengths ) + 4;
+    my $max     = List::Util::max( @lengths ) + 4;
 
     if ( $args->{colorize} ) {
         @output = ();
-        $self->_render_pipe( $self->pipe, { indent => '', color => \%color },  \@output);
+        $self->_render_pipe( $self->pipe, { indent => '', color => \%color },
+            \@output );
         @records = map { expand( $_ ) } map { split( /\n/, $_ ) } @output;
     }
 
     foreach ( @records ) {
-        my $pad =  ' ' x ($max - shift @lengths);
+        my $pad = ' ' x ( $max - shift @lengths );
         s/\\$/$pad \\/;
     }
 
-    return join ("\n", @records ) . "\n";
+    return join( "\n", @records ) . "\n";
 }
 
 sub _render_pipe {

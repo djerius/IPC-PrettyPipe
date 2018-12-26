@@ -486,17 +486,18 @@ sub ffadd {
 
             my $cmd;
 
-            if ( ( $cmd = $t->[0])->$_isa( 'IPC::PrettyPipe' ) ) {
-                croak( "In an array containing an IPC::PrettyPipe object, it must be the only element\n" )
-                  if @$t > 1;
+            if ( ( $cmd = $t->[0] )->$_isa( 'IPC::PrettyPipe' ) ) {
+                croak(
+                    "In an array containing an IPC::PrettyPipe object, it must be the only element\n"
+                ) if @$t > 1;
             }
 
             else {
 
                 $cmd = IPC::PrettyPipe::Cmd->new(
-                                                    cmd    => shift( @$t ),
-                                                    argfmt => $argfmt->clone
-                                                   );
+                    cmd    => shift( @$t ),
+                    argfmt => $argfmt->clone
+                );
                 $cmd->ffadd( @$t );
             }
 

@@ -64,8 +64,9 @@ has _harness => (
 
                 push @harness,
                   [
-                   $cmd->cmd,
-                   map { $_->render( flatten => 1 ) } @{ $cmd->args->elements },
+                    $cmd->cmd,
+                    map { $_->render( flatten => 1 ) }
+                      @{ $cmd->args->elements },
                   ];
 
                 push @harness,

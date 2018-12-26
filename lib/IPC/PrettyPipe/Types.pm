@@ -26,8 +26,8 @@ coerce AutoArrayRef,
   from Any, via { [$_] };
 
 class_type Pipe, { class => 'IPC::PrettyPipe' };
-class_type Cmd, { class => 'IPC::PrettyPipe::Cmd' };
-class_type Arg, { class => 'IPC::PrettyPipe::Arg' };
+class_type Cmd,  { class => 'IPC::PrettyPipe::Cmd' };
+class_type Arg,  { class => 'IPC::PrettyPipe::Arg' };
 
 
 1;
