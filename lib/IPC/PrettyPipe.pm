@@ -89,14 +89,17 @@ BEGIN {
 
   # initialize the pipe with commands
   $pipe = IPC::PrettyPipe->new(
-    cmds => [ $cmd1, $cmd2 ], %attrs
+    cmds => [ $cmd1, $cmd2 ],
+    %attributes
   );
 
   # initialize the pipe with a single command
   $pipe = IPC::PrettyPipe->new( $cmd );
 
   # create an empty pipeline, setting defaults
-  $pipe = IPC::PrettyPipe->new( %attrs );
+  $pipe = IPC::PrettyPipe->new( %attributes );
+
+See L</ATTRIBUTES> for a description of the available attributes.
 
 =cut
 
@@ -176,7 +179,7 @@ method for processing.
 
 =cut
 
-=method B<cmds>
+=method cmds
 
   $cmds = $pipe->cmds;
 
