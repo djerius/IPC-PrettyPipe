@@ -6,6 +6,8 @@ use Moo;
 
 our $VERSION = '0.13';
 
+use Safe::Isa;
+
 use namespace::clean;
 
 
@@ -23,8 +25,8 @@ sub push {
 
     my ( $self, $elem ) = ( shift, shift );
 
-    die( "incompatible element\n" )
-      unless $elem->does( 'IPC::PrettyPipe::Queue::Element' );
+    die( "attempt to push an incompatible element onto an IPC::PrettyPipe::Queue\n" )
+      unless $elem->$_does( 'IPC::PrettyPipe::Queue::Element' );
 
     my $elements = $self->elements;
 
