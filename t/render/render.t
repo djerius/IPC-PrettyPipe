@@ -225,12 +225,16 @@ ppipe [ 'cmd 1', '-a', '2>', 'std err' ],
     > 'std out'      \
 ) > 0
 
-=== nested pipes, outer pipe streams
+=== nested pipes, outer pipe streams, not merged
 
 --- input
-ppipe [ 'cmd 1', '-a', '2>', 'std err' ],
-      [ ppipe [ 'cmd 2', '-b', '>', 'std out' ] ],
-      '>', 0;
+IPC::PrettyPipe->new(
+  cmds => [  [ 'cmd 1', '-a', '2>', 'std err' ],
+             ppipe [ 'cmd 2', '-b', '>', 'std out' ] ,
+          ],
+  streams => [ ppstream '>', 0 ],
+  merge_pipes => 0,
+);
 
 --- expected
 (                       \
@@ -241,6 +245,24 @@ ppipe [ 'cmd 1', '-a', '2>', 'std err' ],
         -b              \
         > 'std out'     \
 ) > 0
+
+=== nested pipes, outer pipe streams, merged
+
+--- input
+ppipe [ 'cmd 1', '-a', '2>', 'std err' ],
+      ppipe( [ 'cmd 2', '-b', '>', 'std out' ]),
+      '>', 0;
+
+--- expected
+(                    \
+  'cmd 1'            \
+    -a               \
+    2> 'std err'     \
+| 'cmd 2'            \
+    -b               \
+    > 'std out'      \
+) > 0
+
 
 === nested pipes, inner pipe streams
 

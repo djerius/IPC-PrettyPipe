@@ -22,18 +22,11 @@ subtest '|=' => sub {
                             call cmd     => 'foo'
                         };
                         item object {
-                            prop blessed => 'IPC::PrettyPipe';
-                            call cmds    => object {
-                                call elements => array {
-                                    item object {
-                                        prop blessed => 'IPC::PrettyPipe::Cmd';
-                                        call cmd     => 'goo';
-                                    };
-                                };
-                            };
+                            prop blessed => 'IPC::PrettyPipe::Cmd';
+                            call cmd     => 'goo';
                         };
                     };
-                }
+                };
             },
         );
     };
@@ -77,26 +70,12 @@ subtest '|' => sub {
                 call cmds    => object {
                     call elements => array {
                         item object {
-                            prop blessed => 'IPC::PrettyPipe';
-                            call cmds    => object {
-                                call elements => array {
-                                    item object {
-                                        prop blessed => 'IPC::PrettyPipe::Cmd';
-                                        call cmd     => 'foo'
-                                    };
-                                };
-                            };
+                            prop blessed => 'IPC::PrettyPipe::Cmd';
+                            call cmd     => 'foo'
                         };
                         item object {
-                            prop blessed => 'IPC::PrettyPipe';
-                            call cmds    => object {
-                                call elements => array {
-                                    item object {
-                                        prop blessed => 'IPC::PrettyPipe::Cmd';
-                                        call cmd     => 'goo'
-                                    };
-                                };
-                            };
+                            prop blessed => 'IPC::PrettyPipe::Cmd';
+                            call cmd     => 'goo'
                         };
                     };
                 };
@@ -107,7 +86,7 @@ subtest '|' => sub {
 
     subtest 'pipe | cmd' => sub {
 
-        my $pipe = ppipe | ppcmd 'goo';
+        my $pipe = ppipe( ppcmd 'foo' ) | ppcmd 'goo';
 
         is(
             $pipe,
@@ -116,10 +95,8 @@ subtest '|' => sub {
                 call cmds    => object {
                     call elements => array {
                         item object {
-                            prop blessed => 'IPC::PrettyPipe';
-                            call cmds    => object {
-                                call empty => 1;
-                            };
+                            prop blessed => 'IPC::PrettyPipe::Cmd';
+                            call cmd     => 'foo'
                         };
                         item object {
                             prop blessed => 'IPC::PrettyPipe::Cmd';
@@ -133,7 +110,7 @@ subtest '|' => sub {
 
     subtest 'cmd | pipe' => sub {
 
-        my $pipe = ppcmd( 'goo' ) | ppipe( ppcmd 'foo' );
+        my $pipe = ppcmd( 'foo' ) | ppipe( ppcmd 'goo' );
 
         is(
             $pipe,
@@ -143,18 +120,11 @@ subtest '|' => sub {
                     call elements => array {
                         item object {
                             prop blessed => 'IPC::PrettyPipe::Cmd';
-                            call cmd     => 'goo';
+                            call cmd     => 'foo'
                         };
                         item object {
-                            prop blessed => 'IPC::PrettyPipe';
-                            call cmds    => object {
-                                call elements => array {
-                                    item object {
-                                        prop blessed => 'IPC::PrettyPipe::Cmd';
-                                        call cmd     => 'foo';
-                                    };
-                                };
-                            };
+                            prop blessed => 'IPC::PrettyPipe::Cmd';
+                            call cmd     => 'goo'
                         };
                     };
                 };

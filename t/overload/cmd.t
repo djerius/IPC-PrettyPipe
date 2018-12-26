@@ -33,7 +33,7 @@ subtest '|' => sub {
 
     subtest 'pipe | cmd' => sub {
 
-        my $pipe = ppipe | ppcmd 'goo';
+        my $pipe = ppipe( ppcmd 'foo' ) | ppcmd 'goo';
 
         is(
             $pipe,
@@ -42,10 +42,8 @@ subtest '|' => sub {
                 call cmds    => object {
                     call elements => array {
                         item object {
-                            prop blessed => 'IPC::PrettyPipe';
-                            call cmds    => object {
-                                call empty => 1;
-                            };
+                            prop blessed => 'IPC::PrettyPipe::Cmd';
+                            call cmd     => 'foo'
                         };
                         item object {
                             prop blessed => 'IPC::PrettyPipe::Cmd';
@@ -72,15 +70,8 @@ subtest '|' => sub {
                             call cmd     => 'goo';
                         };
                         item object {
-                            prop blessed => 'IPC::PrettyPipe';
-                            call cmds    => object {
-                                call elements => array {
-                                    item object {
-                                        prop blessed => 'IPC::PrettyPipe::Cmd';
-                                        call cmd     => 'foo';
-                                    };
-                                };
-                            };
+                            prop blessed => 'IPC::PrettyPipe::Cmd';
+                            call cmd     => 'foo';
                         };
                     };
                 };

@@ -155,7 +155,7 @@ has _init_streams => (
     is       => 'ro',
     isa      => ArrayRef [ InstanceOf ['IPC::PrettyPipe::Stream'] ],
     init_arg => 'streams',
-    default => sub { [] },
+    default  => sub { [] },
 );
 
 has _init_cmds => (
@@ -190,6 +190,22 @@ has cmds => (
     is       => 'ro',
     default  => sub { IPC::PrettyPipe::Queue->new },
     init_arg => undef,
+);
+
+
+=attr merge_pipes
+
+Typically, adding a pipe to a pipe via L<add> results in the addition
+of a nested pipe.  If C<merge_pipes> is true, its commands will be directly
+added if the added pipe hasn't changed the default streams.  This
+defaults to true.
+
+=cut
+
+has merge_pipes => (
+    is      => 'rw',
+    default => 1,
+    isa     => Bool,
 );
 
 has _executor_arg => (
@@ -388,42 +404,57 @@ sub add {
         ] );
 
 
-    my $cmd;
-
     $argfmt->copy_from( $attr->{argfmt} ) if defined $attr->{argfmt};
     $argfmt->copy_from( IPC::PrettyPipe::Arg::Format->new_from_hash( $attr ) );
 
 
     if ( $attr->{cmd}->$_isa( 'IPC::PrettyPipe::Cmd' ) ) {
 
-        $cmd = delete $attr->{cmd};
+        my $cmd = delete $attr->{cmd};
 
         croak(
             "cannot specify additional arguments when passing a Cmd object\n" )
           if keys %$attr;
+
+        $self->cmds->push( $cmd );
+
+        return $cmd;
     }
 
     elsif ( $attr->{cmd}->$_isa( 'IPC::PrettyPipe' ) ) {
 
-        $cmd = delete $attr->{cmd};
+        my $cmd = delete $attr->{cmd};
 
         croak(
             "cannot specify additional arguments when passing a Pipe object\n" )
           if keys %$attr;
+
+        if ( $self->merge_pipes && $cmd->streams->empty ) {
+            $self->cmds->push( $_ ) foreach @{ $cmd->cmds->elements };
+            return $self;
+        }
+        else {
+
+            $self->cmds->push( $cmd );
+            return $cmd;
+        }
     }
 
     else {
 
-        $cmd = IPC::PrettyPipe::Cmd->new(
+        my $cmd = IPC::PrettyPipe::Cmd->new(
             cmd    => $attr->{cmd},
             argfmt => $argfmt->clone,
             exists $attr->{args} ? ( args => $attr->{args} ) : (),
         );
+
+        $self->cmds->push( $cmd );
+
+        return $cmd;
+
     }
 
-    $self->cmds->push( $cmd );
-
-    return $cmd;
+    die( "NOTREACHED" );
 }
 
 =method ffadd
