@@ -67,6 +67,35 @@ BEGIN {
     IPC::PrettyPipe::Arg::Format->shadow_attrs( fmt => sub { 'arg' . shift } );
 }
 
+=method new
+
+  # constructor with named arguments
+  $cmd = IPC::PrettyPipe::Cmd->new( cmd => $cmd, %attributes );
+
+  # concise constructor interface
+  $cmd = IPC::PrettyPipe::Cmd->new( $cmd );
+  $cmd = IPC::PrettyPipe::Cmd->new( [ $cmd, $args ] );
+
+
+Construct a B<IPC::PrettyPipe::Cmd> object encapsulating C<$cmd>.
+C<$cmd> must be specified.  See L</ATTRIBUTES> for a description
+of the available attributes.
+
+=cut
+
+=method cmd
+
+  $name = $cmd->cmd
+
+Return the name of the program to execute.
+
+=attr cmd
+
+The program to execute.  Required.
+
+=cut
+
+
 has cmd => (
     is       => 'ro',
     isa      => Str,
@@ -83,17 +112,100 @@ has _init_args => (
     clearer   => 1,
 );
 
+=method args
+
+  $args = $cmd->args;
+
+Return a L<IPC::PrettyPipe::Queue> object containing the
+L<IPC::PrettyPipe::Arg> objects associated with the command.
+
+
+=attr args
+
+I<Optional>. Arguments for the program.  C<args> may be
+
+=over
+
+=item *
+
+A scalar, e.g. a single argument;
+
+=item *
+
+An L<IPC::PrettyPipe::Arg> object;
+
+=item *
+
+A hashref with pairs of names and values. The arguments will be
+supplied to the command in a random order.
+
+=item *
+
+An array reference containing more complex argument specifications.
+Its elements are processed with the L</ffadd> method.
+
+=back
+
+=cut
+
+
 has args => (
     is       => 'ro',
     default  => sub { IPC::PrettyPipe::Queue->new },
     init_arg => undef,
 );
 
+=method B<streams>
+
+  $streams = $cmd->streams
+
+Return a L<IPC::PrettyPipe::Queue> object containing the
+L<IPC::PrettyPipe::Stream> objects associated with the command.
+
+=cut
+
 has streams => (
     is       => 'ro',
     default  => sub { IPC::PrettyPipe::Queue->new },
     init_arg => undef,
 );
+
+
+=method argpfx
+
+=method argsep
+
+=method argfmt
+
+  $obj->argpfx( $new_pfx );
+  $obj->argsep( $new_sep );
+  $obj->argfmt( $format_obj );
+
+Retrieve (when called with no arguments) or modify (when called with
+an argument) the similarly named object attributes.  See
+L<IPC::PrettyPipe::Arg> for more information.  Changing them
+affects new, not existing, arguments
+
+C<$format_obj> is an L<IPC::PrettyPipe::Arg::Format> object;
+
+
+=attr argpfx
+
+=attr argsep
+
+I<Optional>.  The default prefix and separation attributes for
+command arguments.  See L<IPC::PrettyPipe::Arg> for more
+details.  These override any specified via the L</argfmt> object.
+
+
+=attr argfmt
+
+I<Optional>. An L<IPC::PrettyPipe::Arg::Format> object which will be used to
+specify the default prefix and separation attributes for arguments to
+commands.  May be overridden by L</argpfx> and L</argsep>.
+
+
+=cut
 
 has argfmt => (
     is      => 'ro',
@@ -141,7 +253,66 @@ sub BUILD {
     return;
 }
 
+=method quoted_cmd
+
+  $name = $cmd->quoted_cmd;
+
+Return the name of the command, appropriately quoted for passing as a
+single word to a Bourne compatible shell.
+
+=cut
+
 sub quoted_cmd { shell_quote( $_[0]->cmd ) }
+
+=method add
+
+  $cmd->add( $args );
+  $cmd->add( arg => $args, %options );
+
+Add one or more arguments to the command.  If a single parameter is
+passed, it is assumed to be the C<arg> parameter.
+
+This is useful if some arguments should be conditionally given, e.g.
+
+        $cmd = IPC::PrettyPipe::Cmd->new( 'ls' );
+        $cmd->add( '-l' ) if $want_long_listing;
+
+
+The available options are:
+
+=over
+
+=item C<arg>
+
+The argument or arguments to add.  It may take one of the following
+values:
+
+=over
+
+=item *
+
+an L<IPC::PrettyPipe::Arg> object;
+
+=item *
+
+A scalar, e.g. a single argument;
+
+=item *
+
+An arrayref with pairs of names and values.  The arguments will be supplied to the
+command in the order they appear.
+
+=item *
+
+A hashref with pairs of names and values. The arguments will be supplied to the
+command in a random order.
+
+=back
+
+=back
+
+=cut
+
 
 sub add {
 
@@ -227,7 +398,54 @@ sub add {
 }
 
 
-# free form add
+=method ffadd
+
+  $cmd->ffadd( @arguments );
+
+A more relaxed means of adding argument specifications. C<@arguments>
+may contain any of the following items:
+
+=over
+
+=item *
+
+an L<IPC::PrettyPipe::Arg> object
+
+=item *
+
+A scalar, representing an argument without a value.
+
+=item *
+
+An arrayref with pairs of names and values.  The arguments will be supplied to the
+command in the order they appear.
+
+=item *
+
+A hashref with pairs of names and values. The arguments will be supplied to the
+command in a random order.
+
+=item *
+
+An L<IPC::PrettyPipe::Arg::Format> object, specifying the prefix
+and separator attributes for successive arguments.
+
+=item *
+
+An L<IPC::PrettyPipe::Stream> object
+
+=item *
+
+A string which matches a stream specification
+(L<IPC::PrettyPipe::Stream::Utils/Stream Specification>), which will cause
+a new I/O stream to be attached to the command.  If the specification
+requires an additional parameter, the next value in C<@arguments> will be
+used for that parameter.
+
+=back
+
+=cut
+
 sub ffadd {
 
     my $self = shift;
@@ -296,6 +514,20 @@ sub ffadd {
     return;
 }
 
+=method B<stream>
+
+  $cmd->stream( $stream_obj );
+  $cmd->stream( $spec );
+  $cmd->stream( $spec, $file );
+
+Add an I/O stream to the command.  It may be passed either a stream
+specification (L<IPC::PrettyPipe::Stream::Utils/Stream Specification>)
+or an L<IPC::PrettyPipe::Stream> object.
+
+See L<IPC::PrettyPipe::Stream> for more information.
+
+=cut
+
 sub stream {
 
     my $self = shift;
@@ -330,6 +562,15 @@ sub stream {
 }
 
 
+=method valmatch
+
+  $n = $cmd->valmatch( $pattern );
+
+Returns the number of arguments whose value matches the passed
+regular expression.
+
+=cut
+
 sub valmatch {
     my $self    = shift;
     my $pattern = shift;
@@ -337,6 +578,32 @@ sub valmatch {
     # find number of matches;
     return sum 0, map { $_->valmatch( $pattern ) } @{ $self->args->elements };
 }
+
+=method valsubst
+
+  $cmd->valsubst( $pattern, $value, %options );
+
+Replace the values of arguments whose names match the Perl regular
+expression I<$pattern> with I<$value>. The following options are
+available:
+
+=over
+
+=item C<firstvalue>
+
+If true, the first occurence of a match will be replaced with
+this.
+
+=item C<lastvalue>
+
+If true, the last occurence of a match will be replaced with
+this.  In the case where there is only one match and both
+C<firstvalue> and C<lastvalue> are specified, C<lastvalue> takes
+precedence.
+
+=back
+
+=cut
 
 sub valsubst {
     my $self = shift;
@@ -443,7 +710,7 @@ valsubst
 =head1 DESCRIPTION
 
 B<IPC::PrettyPipe::Cmd> objects are containers for the individual
-commands in a pipeline created by B<L<IPC::PrettyPipe>>.  A command
+commands in a pipeline created by L<IPC::PrettyPipe>.  A command
 may have one or more arguments, some of which are options consisting
 of a name and an optional value.
 
@@ -451,266 +718,3 @@ Options traditionally have a prefix (e.g. C<--> for "long" options,
 C<-> for short options).  B<IPC::PrettyPipe::Cmd> makes no distinction
 between option and non-option arguments.  The latter are simply
 specified as arguments with a blank prefix.
-
-
-=head1 METHODS
-
-=head2 Constructor
-
-=over
-
-=item B<new>
-
-  # constructor with named arguments
-  $cmd = IPC::PrettyPipe::Cmd->new( cmd => $cmd, %attr );
-
-  # concise constructor interface
-  $cmd = IPC::PrettyPipe::Cmd->new( $cmd );
-  $cmd = IPC::PrettyPipe::Cmd->new( [ $cmd, $args ] );
-
-
-Construct a B<IPC::PrettyPipe::Cmd> object encapsulating C<$cmd>.
-C<$cmd> must be specified.
-
-
-The available attributes are:
-
-=over
-
-=item C<cmd>
-
-The program to execute.
-
-=item C<args>
-
-I<Optional>. Arguments for the program.  C<args> may be
-
-=over
-
-=item *
-
-A scalar, e.g. a single argument;
-
-=item *
-
-An B<L<IPC::PrettyPipe::Arg>> object;
-
-=item *
-
-A hashref with pairs of names and values. The arguments will be
-supplied to the command in a random order.
-
-=item *
-
-An array reference containing more complex argument specifications.
-Its elements are processed with the B<L</ffadd>> method.
-
-=back
-
-=item C<argpfx>, C<argsep>
-
-I<Optional>.  The default prefix and separation attributes for
-command arguments.  See B<L<IPC::PrettyPipe::Arg>> for more
-details.  These override any specified via the C<L</argfmt>> object.
-
-=item C<argfmt>
-
-I<Optional>. An B<L<IPC::PrettyPipe::Arg::Format>> object which will be used to
-specify the default prefix and separation attributes for arguments to
-commands.  May be overridden by C<L</argpfx>> and C<L</argsep>>.
-
-
-=back
-
-=back
-
-=head2 Other methods
-
-=over
-
-=item B<add>
-
-  $cmd->add( $args );
-  $cmd->add( arg => $args, %options );
-
-Add one or more arguments to the command.  If a single parameter is
-passed, it is assumed to be the C<arg> parameter.
-
-This is useful if some arguments should be conditionally given, e.g.
-
-        $cmd = IPC::PrettyPipe::Cmd->new( 'ls' );
-        $cmd->add( '-l' ) if $want_long_listing;
-
-
-The available options are:
-
-=over
-
-=item C<arg>
-
-The argument or arguments to add.  It may take one of the following
-values:
-
-=over
-
-=item *
-
-an B<L<IPC::PrettyPipe::Arg>> object;
-
-=item *
-
-A scalar, e.g. a single argument;
-
-=item *
-
-An arrayref with pairs of names and values.  The arguments will be supplied to the
-command in the order they appear.
-
-=item *
-
-A hashref with pairs of names and values. The arguments will be supplied to the
-command in a random order.
-
-=back
-
-=item C<argpfx> => I<string>
-
-=item C<argsep> => I<string>
-
-These override the object's C<argpfx> and C<argsep> attributes for this
-argument only.
-
-=item C<argfmt> => B<L<IPC::PrettyPipe::Arg::Format>> object
-
-This will override the format attributes for this argument only.
-
-=back
-
-=item B<args>
-
-  $args = $cmd->args;
-
-Return a B<L<IPC::PrettyPipe::Queue>> object containing the
-B<L<IPC::PrettyPipe::Arg>> objects associated with the command.
-
-=item B<argpfx>,
-
-=item B<argsep>
-
-=item B<argfmt>
-
-Retrieve (when called with no arguments) or modify (when called with
-an argument) the similarly named object attributes.  See
-B<L<IPC::PrettyPipe::Arg>> for more information.  Changing them
-affects new, not existing, arguments;
-
-=item B<cmd>
-
-  $name = $cmd->cmd
-
-Return the name of the command.
-
-=item B<quoted_cmd>
-
-  $name = $cmd->quoted_cmd
-
-Return the name of the command, appropriately quoted for passing as a
-single word to a Bourne compatible shell.
-
-=item B<ffadd>
-
-  $cmd->ffadd( @arguments );
-
-A more relaxed means of adding argument specifications. C<@arguments>
-may contain any of the following items:
-
-=over
-
-=item *
-
-an B<L<IPC::PrettyPipe::Arg>> object
-
-=item *
-
-A scalar, representing an argument without a value.
-
-=item *
-
-An arrayref with pairs of names and values.  The arguments will be supplied to the
-command in the order they appear.
-
-=item *
-
-A hashref with pairs of names and values. The arguments will be supplied to the
-command in a random order.
-
-=item *
-
-An B<L<IPC::PrettyPipe::Arg::Format>> object, specifying the prefix
-and separator attributes for successive arguments.
-
-=item *
-
-An B<L<IPC::PrettyPipe::Stream>> object
-
-=item *
-
-A string which matches a stream specification
-(L<IPC::PrettyPipe::Stream::Utils/Stream Specification>), which will cause
-a new I/O stream to be attached to the command.  If the specification
-requires an additional parameter, the next value in C<@arguments> will be
-used for that parameter.
-
-=back
-
-=item B<stream>
-
-  $cmd->stream( $stream_obj );
-  $cmd->stream( $spec );
-  $cmd->stream( $spec, $file );
-
-Add an I/O stream to the command.  It may be passed either a stream
-specification (L<IPC::PrettyPipe::Stream::Utils/Stream Specification>)
-or an B<L<IPC::PrettyPipe::Stream>> object.
-
-See B<L<IPC::PrettyPipe::Stream>> for more information.
-
-=item B<streams>
-
-  $streams = $cmd->streams
-
-Return a B<L<IPC::PrettyPipe::Queue>> object containing the
-B<L<IPC::PrettyPipe::Stream>> objects associated with the command.
-
-=item B<valmatch>
-
-  $n = $cmd->valmatch( $pattern );
-
-Returns the number of arguments whose value matches the passed
-regular expression.
-
-=item B<valsubst>
-
-  $cmd->valsubst( $pattern, $value, %options );
-
-Replace the values of arguments whose names match the Perl regular
-expression I<$pattern> with I<$value>. The following options are
-available:
-
-=over
-
-=item C<firstvalue>
-
-If true, the first occurence of a match will be replaced with
-this.
-
-=item C<lastvalue>
-
-If true, the last occurence of a match will be replaced with
-this.  In the case where there is only one match and both
-C<firstvalue> and C<lastvalue> are specified, C<lastvalue> takes
-precedence.
-
-=back
-
-=back
