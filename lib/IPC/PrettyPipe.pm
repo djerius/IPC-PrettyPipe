@@ -31,6 +31,56 @@ with 'IPC::PrettyPipe::Queue::Element';
 
 use namespace::clean;
 
+use overload 'fallback' => 1;
+
+=operator |=
+
+The C<|=> operator is equivalent to calling the L</add> method on the
+pipe:
+
+  $pipe |= $cmd;
+  $pipe |= $other_pipe;
+
+is the same as
+
+  $pipe->add( $cmd );
+  $pipe->add( $other_pipe );
+
+=cut
+
+use overload '|=' => sub {
+    $_[0]->add( $_[1] );
+    return $_[0];
+};
+
+=operator |
+
+The C<|> operator is equivalent to creating a new pipe and adding 
+the operands of the C<|> operator, e.g.
+
+  $pipe1 | $obj
+
+is the same as
+
+  do {
+    my $tpipe = IPC::PrettyPipe->new;
+    $tpipe->add( $pipe1 );
+    $tpipe->add( $obj );
+    $tpipe
+  };
+
+where C<$obj> may be either an L<IPC::PrettyPipe> or L<IPC::PrettyPipe::Cmd> object.
+
+=cut
+
+use overload '|' => sub {
+    my $swap = pop;
+    my $pipe = IPC::PrettyPipe->new;
+    $pipe->add( $_ ) for ( $swap ? reverse( @_ ) : @_ );
+    $pipe;
+};
+
+
 BEGIN {
     IPC::PrettyPipe::Arg::Format->shadow_attrs( fmt => sub { 'arg' . shift } );
 }

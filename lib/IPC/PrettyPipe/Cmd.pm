@@ -31,6 +31,35 @@ with 'IPC::PrettyPipe::Queue::Element';
 
 use namespace::clean;
 
+use overload 'fallback' => 1;
+
+=operator |
+
+The C<|> operator is equivalent to creating a new pipe and adding 
+the operands of the C<|> operator, e.g.
+
+  $cmd | $obj
+
+is the same as
+
+  do {
+    my $tpipe = IPC::PrettyPipe->new;
+    $tpipe->add( $cmd );
+    $tpipe->add( $obj );
+    $tpipe
+  };
+
+where C<$obj> may be either an L<IPC::PrettyPipe> or L<IPC::PrettyPipe::Cmd> object.
+
+=cut
+
+
+use overload '|' => sub {
+    my $swap = pop;
+    my $pipe = IPC::PrettyPipe->new;
+    $pipe->add( $_ ) for ( $swap ? reverse( @_ ) : @_ );
+    $pipe;
+};
 
 # need access to has method which will get removed at the end of the
 # compilation of this module
