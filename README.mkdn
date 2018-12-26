@@ -91,17 +91,20 @@ details.  These override any specified via the ["argfmt"](#argfmt) object.
 
 ## streams
 
-    $streams = $pipe->streams;
-
-A [IPC::PrettyPipe::Queue](https://metacpan.org/pod/IPC::PrettyPipe::Queue) object containing the
-[IPC::PrettyPipe::Stream](https://metacpan.org/pod/IPC::PrettyPipe::Stream) objects associated with the pipe. Created
-automatically.
+An arrayref of [IPC::PrettyPipe::stream](https://metacpan.org/pod/IPC::PrettyPipe::stream) objects.
 
 ## cmds
 
 _Optional_. The value should be an arrayref of commands to load into
 the pipe.  The contents of the array are passed to the ["ffadd"](#ffadd)
 method for processing.
+
+## merge\_pipes
+
+Typically, adding a pipe to a pipe via [add](https://metacpan.org/pod/add) results in the addition
+of a nested pipe.  If `merge_pipes` is true, its commands will be directly
+added if the added pipe hasn't changed the default streams.  This
+defaults to true.
 
 ## executor
 
@@ -123,16 +126,26 @@ be either a class name or an object reference, and must consume the
 
     # initialize the pipe with commands
     $pipe = IPC::PrettyPipe->new(
-      cmds => [ $cmd1, $cmd2 ], %attrs
+      cmds => [ $cmd1, $cmd2 ],
+      %attributes
     );
 
     # initialize the pipe with a single command
     $pipe = IPC::PrettyPipe->new( $cmd );
 
     # create an empty pipeline, setting defaults
-    $pipe = IPC::PrettyPipe->new( %attrs );
+    $pipe = IPC::PrettyPipe->new( %attributes );
 
-## **cmds**
+See ["ATTRIBUTES"](#attributes) for a description of the available attributes.
+
+## streams
+
+    $streams = $pipe->streams;
+
+A [IPC::PrettyPipe::Queue](https://metacpan.org/pod/IPC::PrettyPipe::Queue) object containing the
+[IPC::PrettyPipe::Stream](https://metacpan.org/pod/IPC::PrettyPipe::Stream) objects associated with the pipe.
+
+## cmds
 
     $cmds = $pipe->cmds;
 
@@ -275,6 +288,39 @@ results in
     |     cmd3 \
             input stdin \
             output output_file
+
+# OPERATORS
+
+## |=
+
+The `|=` operator is equivalent to calling the ["add"](#add) method on the
+pipe:
+
+    $pipe |= $cmd;
+    $pipe |= $other_pipe;
+
+is the same as
+
+    $pipe->add( $cmd );
+    $pipe->add( $other_pipe );
+
+## |
+
+The `|` operator is equivalent to creating a new pipe and adding 
+the operands of the `|` operator, e.g.
+
+    $pipe1 | $obj
+
+is the same as
+
+    do {
+      my $tpipe = IPC::PrettyPipe->new;
+      $tpipe->add( $pipe1 );
+      $tpipe->add( $obj );
+      $tpipe
+    };
+
+where `$obj` may be either an [IPC::PrettyPipe](https://metacpan.org/pod/IPC::PrettyPipe) or [IPC::PrettyPipe::Cmd](https://metacpan.org/pod/IPC::PrettyPipe::Cmd) object.
 
 # BUGS
 
