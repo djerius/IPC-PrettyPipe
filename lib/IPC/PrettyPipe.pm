@@ -297,6 +297,15 @@ L<IPC::PrettyPipe::Render::Template::Tiny>.
 
 =cut
 
+=method renderer
+
+  $renderer = $self->renderer;
+  $new_renderer = $self->renderer( $new_renderer );
+
+Get or set a pipe's renderer.
+
+=cut
+
 sub renderer {
     my $self = shift;
 
