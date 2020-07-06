@@ -39,7 +39,7 @@ The L<IPC::PrettyPipe> object to render.
 
 =cut
 
-=attr pipe
+=method pipe
 
   $pipe = $renderer->pipe;
   $renderer->pipe( $pipe );
