@@ -158,11 +158,18 @@ Return a [IPC::PrettyPipe::Queue](https://metacpan.org/pod/IPC::PrettyPipe::Queu
 
 Execute the pipeline.
 
+## renderer
+
+    $renderer = $self->renderer;
+    $new_renderer = $self->renderer( $new_renderer );
+
+Get or set a pipe's renderer.
+
 ## render
 
     my $string = $pipe->render
 
-Return a prettified string of the pipeline.
+Return the rendered pipeline;
 
 ## add
 
@@ -322,21 +329,21 @@ is the same as
 
 where `$obj` may be either an [IPC::PrettyPipe](https://metacpan.org/pod/IPC::PrettyPipe) or [IPC::PrettyPipe::Cmd](https://metacpan.org/pod/IPC::PrettyPipe::Cmd) object.
 
-# BUGS
+# SUPPORT
 
-Please report any bugs or feature requests on the bugtracker website
-[https://rt.cpan.org/Public/Dist/Display.html?Name=IPC-PrettyPipe](https://rt.cpan.org/Public/Dist/Display.html?Name=IPC-PrettyPipe) or by
-email to
-[bug-IPC-PrettyPipe@rt.cpan.org](mailto:bug-IPC-PrettyPipe@rt.cpan.org).
+## Bugs
 
-When submitting a bug or request, please include a test-file or a
-patch to an existing test-file that illustrates the bug or desired
-feature.
+Please report any bugs or feature requests to bug-ipc-prettypipe@rt.cpan.org  or through the web interface at: https://rt.cpan.org/Public/Dist/Display.html?Name=IPC-PrettyPipe
 
-# SOURCE
+## Source
 
-The development version is on github at [https://github.com/djerius/ipc-prettypipe](https://github.com/djerius/ipc-prettypipe)
-and may be cloned from [git://github.com/djerius/ipc-prettypipe.git](git://github.com/djerius/ipc-prettypipe.git)
+Source is available at
+
+    https://gitlab.com/djerius/ipc-prettypipe
+
+and may be cloned from
+
+    https://gitlab.com/djerius/ipc-prettypipe.git
 
 # AUTHOR
 
