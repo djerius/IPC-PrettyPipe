@@ -323,7 +323,7 @@ sub renderer {
 
   my $string = $pipe->render
 
-Return a prettified string of the pipeline.
+Return the rendered pipeline;
 
 =cut
 
