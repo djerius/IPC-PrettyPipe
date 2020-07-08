@@ -274,7 +274,6 @@ has _renderer_arg => (
 has _renderer => (
     is      => 'rw',
     isa     => ConsumerOf ['IPC::PrettyPipe::Renderer'],
-    handles => 'IPC::PrettyPipe::Renderer',
     lazy    => 1,
     clearer => 1,
     default => sub {
@@ -322,6 +321,13 @@ sub renderer {
 Return a prettified string of the pipeline.
 
 =cut
+
+sub render {
+
+    my $self = shift;
+
+    $self->_renderer()->render( $self );
+}
 
 
 =for Pod::Coverage BUILDARGS BUILD

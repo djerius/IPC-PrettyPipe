@@ -33,28 +33,6 @@ Construct a new renderer.  Typically this is done automatically by L<IPC::Pretty
 
 =cut
 
-=attr pipe
-
-The L<IPC::PrettyPipe> object to render.
-
-=cut
-
-=method pipe
-
-  $pipe = $renderer->pipe;
-  $renderer->pipe( $pipe );
-
-Retrieve or set the L<IPC::PrettyPipe> object to render.
-
-=cut
-
-
-has pipe => (
-    is       => 'rw',
-    isa      => InstanceOf ['IPC::PrettyPipe'],
-    required => 1,
-);
-
 =attr colors
 
 A color specification; see L</Rendered Colors>.
@@ -191,7 +169,7 @@ sub _colorize {
 
 =method render
 
-  $renderer->render( %options );
+  $renderer->render( $pipe, %options );
 
 The following options are available:
 
@@ -211,8 +189,9 @@ sub render {
 
     my $self = shift;
 
-    my ( $args ) = validate(
+    my ( $pipe, $args ) = validate(
         \@_,
+        InstanceOf[ 'IPC::PrettyPipe' ],
         slurpy Dict [
             colorize => Optional [Bool],
         ] );
@@ -230,7 +209,7 @@ sub render {
     # generate non-colorized version so can get length of records to
     # pad out any continuation lines
     my @output;
-    $self->_render_pipe( $self->pipe, { indent => '' }, \@output );
+    $self->_render_pipe( $pipe, { indent => '' }, \@output );
 
     my @records = map { expand( $_ ) } map { split( /\n/, $_ ) } @output;
     my @lengths = map { length } @records;
@@ -238,7 +217,7 @@ sub render {
 
     if ( $args->{colorize} ) {
         @output = ();
-        $self->_render_pipe( $self->pipe, { indent => '', color => \%color },
+        $self->_render_pipe( $pipe, { indent => '', color => \%color },
             \@output );
         @records = map { expand( $_ ) } map { split( /\n/, $_ ) } @output;
     }
