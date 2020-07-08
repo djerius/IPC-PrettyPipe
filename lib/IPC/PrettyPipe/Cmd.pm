@@ -25,7 +25,7 @@ use String::ShellQuote 'shell_quote';
 
 use Moo;
 
-our $VERSION = '0.13';
+our $VERSION = '0.14';
 
 with 'IPC::PrettyPipe::Queue::Element';
 
@@ -35,7 +35,7 @@ use overload 'fallback' => 1;
 
 =operator |
 
-The C<|> operator is equivalent to creating a new pipe and adding 
+The C<|> operator is equivalent to creating a new pipe and adding
 the operands of the C<|> operator, e.g.
 
   $cmd | $obj

@@ -5,7 +5,7 @@ package IPC::PrettyPipe;
 use strict;
 use warnings;
 
-our $VERSION = '0.13';
+our $VERSION = '0.14';
 use Carp;
 
 use List::Util qw[ sum ];
@@ -55,7 +55,7 @@ use overload '|=' => sub {
 
 =operator |
 
-The C<|> operator is equivalent to creating a new pipe and adding 
+The C<|> operator is equivalent to creating a new pipe and adding
 the operands of the C<|> operator, e.g.
 
   $pipe1 | $obj
@@ -934,4 +934,3 @@ may be replaced via the L</executor> attribute.
 Sometimes it's not possible to fill in an argument's value until after
 a pipeline has been created.  The L</valsubst> method allows
 altering them after the fact.
-

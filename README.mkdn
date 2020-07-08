@@ -4,7 +4,7 @@ IPC::PrettyPipe - manage human readable external command execution pipelines
 
 # VERSION
 
-version 0.13
+version 0.14
 
 # SYNOPSIS
 
@@ -313,7 +313,7 @@ is the same as
 
 ## |
 
-The `|` operator is equivalent to creating a new pipe and adding 
+The `|` operator is equivalent to creating a new pipe and adding
 the operands of the `|` operator, e.g.
 
     $pipe1 | $obj

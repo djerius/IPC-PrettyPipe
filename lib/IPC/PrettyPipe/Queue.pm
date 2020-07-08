@@ -4,7 +4,7 @@ package IPC::PrettyPipe::Queue;
 
 use Moo;
 
-our $VERSION = '0.13';
+our $VERSION = '0.14';
 
 use Safe::Isa;
 use Types::Standard -types;
@@ -16,7 +16,7 @@ use namespace::clean;
 
   $q = IPC::PrettyPipe::Queue->new( %attributes );
 
-Construct a new queue.  See L</ATTRIBUTES> for the available attributes. 
+Construct a new queue.  See L</ATTRIBUTES> for the available attributes.
 
 =cut
 
