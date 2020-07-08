@@ -75,6 +75,26 @@ has colors => (
     },
 );
 
+=attr colorize
+
+A Boolean value indicating whether output should be colorized.  This may be overridden
+in a call to L</render>.  Defaults to true.
+
+=method colorize
+
+  $bool = $renderer->colorize;
+  $renderer->colorize( $bool );
+
+Set or get the C<colorize> attribute.
+
+=cut
+
+has colorize => (
+    is => 'rw',
+    isa => Bool,
+    default => 1,
+);
+
 =attr cmd_template
 
 A L<Template::Tiny> template to generate output for commands.  See L</Rendering
@@ -196,7 +216,8 @@ sub render {
             colorize => Optional [Bool],
         ] );
 
-    $args->{colorize} //= 1;    ## no critic (ProhibitAccessOfPrivateData)
+    $args->{colorize} = $self->colorize    ## no critic (ProhibitAccessOfPrivateData)
+      unless exists $args->{colorize};
 
     my %color;
     _colorize( $self->colors, \%color );
