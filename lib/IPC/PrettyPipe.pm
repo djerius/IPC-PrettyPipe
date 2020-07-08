@@ -222,7 +222,6 @@ has _executor_arg => (
 has _executor => (
     is      => 'rw',
     isa     => ConsumerOf ['IPC::PrettyPipe::Executor'],
-    handles => 'IPC::PrettyPipe::Executor',
     lazy    => 1,
     clearer => 1,
     default => sub {
@@ -262,6 +261,12 @@ sub executor {
 Execute the pipeline.
 
 =cut
+
+sub run {
+    my ( $self ) = @_;
+
+    $self->_executor->run( $self );
+}
 
 
 has _renderer_arg => (
@@ -823,7 +828,7 @@ sub _backend_factory {
         "requested $type module ($req) either doesn't exist or doesn't consume $role\n"
     ) if !defined $module;
 
-    return $module->new( pipe => $self, @_ );
+    return $module->new( @_ );
 }
 
 

@@ -16,84 +16,123 @@ our $VERSION = '0.13';
 
 use namespace::clean;
 
-
-=attr pipe
-
-The C<IPC::PrettyPipe> object which will provide the commands
-
-=cut
-
-has pipe => (
-    is       => 'ro',
-    isa      => InstanceOf ['IPC::PrettyPipe'],
-    required => 1,
-);
-
 # This attribute encapsulates an IPC::Run harness, tieing its creation
 # to an IO::ReStoreFH object to ensure that filehandles are stored &
 # restored properly.  The IPC::Run harness is created on-demand just
-# before it is used.  A separate object could be used, but then
-# IPC::PrettyPipe:Execute::IPC::Run turns into a *really* thin shell
-# around it.  no need for an extra layer.
-
+# before it is used.
 
 has _harness => (
-    is      => 'ro',
-    lazy    => 1,
-    handles => [qw[ run start pump finish ]],
+    is      => 'rwp',
     clearer => 1,
-
-    default => sub {
-
-        my $self = shift;
-
-        # While the harness is instantiated, we store the current fh's
-        $self->_storefh;
-
-        my @harness;
-
-        my @cmds = @{ $self->pipe->cmds->elements };
-
-        while ( @cmds ) {
-
-            my $cmd = shift @cmds;
-
-            if ( $cmd->isa( 'IPC::PrettyPipe::Cmd' ) ) {
-
-                push @harness, '|' if @harness;
-
-                push @harness,
-                  [
-                    $cmd->cmd,
-                    map { $_->render( flatten => 1 ) }
-                      @{ $cmd->args->elements },
-                  ];
-
-                push @harness,
-                  map { $_->spec, $_->has_file ? $_->file : () }
-                  @{ $cmd->streams->elements };
-            }
-            elsif ( $cmd->isa( 'IPC::PrettyPipe' ) ) {
-
-                croak( "cannot chain sub-pipes which have streams" )
-                  unless $cmd->streams->empty;
-                unshift @cmds, @{ $cmd->cmds->elements };
-            }
-        }
-
-        return IPC::Run::harness( @harness );
-    },
-
+    predicate => 1,
+    init_arg => undef,
 );
 
 # store the IO::Restore object; created on demand by _harness.default
 # don't create it otherwise!
 has _storefh => (
-    is      => 'ro',
-    lazy    => 1,
-    default => sub { $_[0]->pipe->_storefh },
+    is      => 'rwp',
+    predicate => 1,
+    init_arg => undef,
     clearer => 1
 );
+
+sub _create_harness {
+    my ( $self, $pipe ) = @_;
+
+    # While the harness is instantiated, we store the current fh's
+    $self->_set__storefh( $pipe->_storefh);
+
+    my @harness;
+
+    my @cmds = @{ $pipe->cmds->elements };
+
+    while ( @cmds ) {
+
+        my $cmd = shift @cmds;
+
+        if ( $cmd->isa( 'IPC::PrettyPipe::Cmd' ) ) {
+
+            push @harness, '|' if @harness;
+
+            push @harness,
+              [
+                $cmd->cmd,
+                map { $_->render( flatten => 1 ) } @{ $cmd->args->elements },
+              ];
+
+            push @harness,
+              map { $_->spec, $_->has_file ? $_->file : () }
+              @{ $cmd->streams->elements };
+        }
+        elsif ( $cmd->isa( 'IPC::PrettyPipe' ) ) {
+
+            croak( "cannot chain sub-pipes which have streams" )
+              unless $cmd->streams->empty;
+            unshift @cmds, @{ $cmd->cmds->elements };
+        }
+    }
+
+    $self->_set__harness( IPC::Run::harness(@harness) );
+}
+
+
+
+=method run
+
+  $self->run( $pipe );
+
+Run the pipeline.
+
+=cut
+
+sub run {
+    my ( $self, $pipe ) = @_;
+    $self->_create_harness( $pipe);
+    $self->_harness->run;
+}
+
+=method start
+
+  $self->start( $pipe );
+
+Create a L<IPC::Run> harness and invoke its L<start|IPC::Run/start>
+method.
+
+=cut
+
+sub start {
+    my ( $self, $pipe ) = @_;
+    $self->_create_harness( $pipe );
+    $self->_harness->start;
+}
+
+
+=method pump
+
+Invoke the B<L<IPC::Run>> B<L<pump|IPC::Run/pump>> method.
+
+=cut
+
+sub pump {
+    my $self = shift;
+    Carp::croak( "must call run method to create harness\n" )
+        unless $self->_has_harness;
+    $self->_harness->pump;
+}
+
+=method finish
+
+Invoke the B<L<IPC::Run>> B<L<finish|IPC::Run/finish>> method.
+
+=cut
+
+sub finish {
+    my $self = shift;
+    Carp::croak( "must call run method to create harness\n" )
+        unless $self->_has_harness;
+    $self->_harness->finish;
+}
 
 # the IO::ReStoreFH object lives only as long as the
 # IPC::Run harness object, and that lives only
@@ -103,24 +142,18 @@ after 'run', 'finish' => sub {
     my $self = shift;
 
     try {
-
         # get rid of harness first to avoid possible closing of file
         # handles while the child is running.  of course the child
         # shouldn't be running at this point, but what the heck
         $self->_clear_harness;
-
     }
 
     catch {
-
         Carp::croak $_;
-
     }
 
     finally {
-
         $self->_clear_storefh;
-
     };
 
 };
@@ -179,24 +212,3 @@ When using the proxied methods, the caller must ensure that the
 B<L</finish>> method is invoked to ensure that the parent processes'
 file descriptors are properly restored.
 
-=head1 Methods
-
-=over
-
-=item B<run>
-
-Run the pipeline.
-
-=item B<start>
-
-Invoke the B<L<IPC::Run>> B<L<start|IPC::Run/start>> method.
-
-=item B<pump>
-
-Invoke the B<L<IPC::Run>> B<L<pump|IPC::Run/pump>> method.
-
-=item B<finish>
-
-Invoke the B<L<IPC::Run>> B<L<finish|IPC::Run/finish>> method.
-
-=back
